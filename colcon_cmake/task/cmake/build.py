@@ -1,0 +1,238 @@
+# Copyright 2016-2018 Dirk Thomas
+# Licensed under the Apache License, Version 2.0
+
+import ast
+import os
+from pathlib import Path
+import re
+
+from colcon_cmake.task.cmake import CMAKE_EXECUTABLE
+from colcon_cmake.task.cmake import get_buildfile
+from colcon_cmake.task.cmake import get_generator
+from colcon_cmake.task.cmake import get_project_file
+from colcon_cmake.task.cmake import get_variable_from_cmake_cache
+from colcon_cmake.task.cmake import get_visual_studio_version
+from colcon_cmake.task.cmake import has_target
+from colcon_cmake.task.cmake import is_multi_configuration_generator
+from colcon_cmake.task.cmake import MSBUILD_EXECUTABLE
+from colcon_core.environment import create_environment_scripts
+from colcon_core.logging import colcon_logger
+from colcon_core.plugin_system import satisfies_version
+from colcon_core.shell import get_command_environment
+from colcon_core.task import check_call
+from colcon_core.task import TaskExtensionPoint
+
+logger = colcon_logger.getChild(__name__)
+
+
+class CmakeBuildTask(TaskExtensionPoint):
+    """Build CMake packages."""
+
+    def __init__(self):  # noqa: D107
+        super().__init__()
+        satisfies_version(TaskExtensionPoint.EXTENSION_POINT_VERSION, '^1.0')
+
+    def add_arguments(self, *, parser):  # noqa: D102
+        parser.add_argument(
+            '--cmake-args',
+            nargs='*', metavar='*', type=str.lstrip,
+            help='Arbitrary arguments which are passed to all CMake projects '
+            '(args which start with a dash must be prefixed with an escaped '
+            'space `\ `, e.g.: `--cmake-args \ -Dvar=val`)')
+        parser.add_argument(
+            '--cmake-clean-cache',
+            action='store_true',
+            help='Remove CMake cache before the build (implicitly forcing '
+                 'CMake configure step)')
+        parser.add_argument(
+            '--cmake-force-configure',
+            action='store_true',
+            help='Force CMake configure step')
+
+    async def build(self, *, additional_hooks=None):  # noqa: D102
+        pkg = self.context.pkg
+        args = self.context.args
+
+        logger.info(
+            "Building CMake package in '{args.path}'".format_map(locals()))
+
+        try:
+            env = await get_command_environment(
+                'build', args.build_base, self.context.dependencies)
+        except RuntimeError as e:
+            logger.error(str(e))
+            return 1
+
+        rc = await self._reconfigure(args, env)
+        if rc and rc.returncode:
+            return rc.returncode
+        rc = await self._build(args, env)
+        if rc.returncode:
+            return rc.returncode
+
+        if await has_target(args.build_base, 'install'):
+            rc = await self._install(args, env)
+            if rc.returncode:
+                return rc.returncode
+        else:
+            logger.warn(
+                "Could not run installation step for package '{pkg.name}' "
+                "because it has no 'install' target".format_map(locals()))
+
+        create_environment_scripts(
+            pkg, args, additional_hooks=additional_hooks)
+
+    async def _reconfigure(self, args, env):
+        self.progress('cmake')
+
+        cmake_cache = Path(args.build_base) / 'CMakeCache.txt'
+        run_configure = args.cmake_force_configure
+        if args.cmake_clean_cache and cmake_cache.exists():
+            cmake_cache.unlink()
+        if not run_configure:
+            run_configure = not cmake_cache.exists()
+        if not run_configure:
+            buildfile = get_buildfile(cmake_cache)
+            run_configure = not buildfile.exists()
+
+        # check CMake args from last run to decide on need to reconfigure
+        if not run_configure:
+            last_cmake_args = self._get_last_cmake_args(args.build_base)
+            run_configure = (args.cmake_args != last_cmake_args)
+        if run_configure:
+            self._store_cmake_args(args.build_base, args.cmake_args)
+
+        if not run_configure:
+            return
+
+        # invoke CMake / reconfigure target
+        cmake_args = [args.path]
+        cmake_args += (args.cmake_args or [])
+        cmake_args += ['-DCMAKE_INSTALL_PREFIX=' + args.install_base]
+        if os.name == 'nt':
+            vsv = get_visual_studio_version()
+            if vsv is None:
+                raise RuntimeError(
+                    'VisualStudioVersion is not set, '
+                    'please run within a Visual Studio Command Prompt.')
+            supported_vsv = {
+                '15.0': 'Visual Studio 15 2017 Win64',
+                '14.0': 'Visual Studio 14 2015 Win64',
+            }
+            if vsv not in supported_vsv:
+                raise RuntimeError(
+                    "Unknown / unsupported VS version ''"
+                    .format_map(locals()))
+            cmake_args += ['-G', supported_vsv[vsv]]
+        if CMAKE_EXECUTABLE is None:
+            raise RuntimeError("Could not find 'cmake' executable")
+        os.makedirs(args.build_base, exist_ok=True)
+        return await check_call(
+            self.context,
+            [CMAKE_EXECUTABLE] + cmake_args,
+            cwd=args.build_base, env=env)
+
+    def _get_last_cmake_args(self, build_base):
+        path = self._get_last_cmake_args_path(build_base)
+        if not os.path.exists(path):
+            return []
+        with open(self._get_last_cmake_args_path(build_base), 'r') as h:
+            content = h.read()
+        return ast.literal_eval(content)
+
+    def _store_cmake_args(self, build_base, cmake_args):
+        with open(self._get_last_cmake_args_path(build_base), 'w') as h:
+            h.write(str(cmake_args))
+
+    def _get_last_cmake_args_path(self, build_base):
+        return os.path.join(build_base, 'cmake_args.last')
+
+    async def _build(self, args, env):
+        self.progress('build')
+
+        # invoke build step
+        if CMAKE_EXECUTABLE is None:
+            raise RuntimeError("Could not find 'cmake' executable")
+        cmd = [CMAKE_EXECUTABLE, '--build', args.build_base]
+        if is_multi_configuration_generator(args.build_base, args.cmake_args):
+            cmd += ['--config', self._get_configuration(args)]
+        else:
+            job_args = self._get_make_arguments()
+            if job_args:
+                cmd += ['--'] + job_args
+        return await check_call(
+            self.context, cmd, cwd=args.build_base, env=env)
+
+    def _get_configuration(self, args):
+        # check for CMake build type in the command line arguments
+        arg_prefix = '-DCMAKE_BUILD_TYPE='
+        build_type = None
+        for cmake_arg in (args.cmake_args or []):
+            if cmake_arg.startswith(arg_prefix):
+                build_type = cmake_arg[len(arg_prefix):]
+        if build_type is None:
+            # get the CMake build type from the CMake cache
+            build_type = get_variable_from_cmake_cache(
+                args.build_base, 'CMAKE_BUILD_TYPE')
+        if build_type in ('Debug', ):
+            return 'Debug'
+        return 'Release'
+
+    def _get_make_arguments(self):
+        """
+        Get the make arguments to limit the number of simultaneously run jobs.
+
+        The arguments are chosen based on the `cpu_count`, e.g. -j4 -l4.
+
+        :returns: list of make arguments
+        :rtype: list of strings
+        """
+        # check MAKEFLAGS for -j/--jobs/-l/--load-average arguments
+        makeflags = os.environ.get('MAKEFLAGS', '')
+        regex = (
+            r'(?:^|\s)'
+            r'(-?(?:j|l)(?:\s*[0-9]+|\s|$))'
+            r'|'
+            r'(?:^|\s)'
+            r'((?:--)?(?:jobs|load-average)(?:(?:=|\s+)[0-9]+|(?:\s|$)))'
+        )
+        matches = re.findall(regex, makeflags) or []
+        matches = [m[0] or m[1] for m in matches]
+        if matches:
+            # do not extend make arguments, let MAKEFLAGS set things
+            return []
+        # Use the number of CPU cores
+        jobs = os.cpu_count()
+        if jobs is None:
+            # the number of cores can't be determined
+            return []
+        return [
+            '-j{jobs}'.format_map(locals()),
+            '-l{jobs}'.format_map(locals()),
+        ]
+
+    async def _install(self, args, env):
+        self.progress('install')
+
+        generator = get_generator(args.build_base)
+        if 'Visual Studio' not in generator:
+            if CMAKE_EXECUTABLE is None:
+                raise RuntimeError("Could not find 'cmake' executable")
+            return await check_call(
+                self.context,
+                [
+                    CMAKE_EXECUTABLE, '--build', args.build_base,
+                    '--target', 'install'],
+                cwd=args.build_base, env=env)
+        else:
+            if MSBUILD_EXECUTABLE is None:
+                raise RuntimeError("Could not find 'msbuild' executable")
+            install_project_file = get_project_file(args.build_base, 'INSTALL')
+            return await check_call(
+                self.context,
+                [
+                    MSBUILD_EXECUTABLE,
+                    '/p:Configuration=' +
+                    self._get_configuration(args),
+                    install_project_file],
+                env=env)
