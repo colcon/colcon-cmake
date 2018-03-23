@@ -98,9 +98,8 @@ class CmakeBuildTask(TaskExtensionPoint):
         # check CMake args from last run to decide on need to reconfigure
         if not run_configure:
             last_cmake_args = self._get_last_cmake_args(args.build_base)
-            run_configure = (args.cmake_args != last_cmake_args)
-        if run_configure:
-            self._store_cmake_args(args.build_base, args.cmake_args)
+            run_configure = (args.cmake_args or []) != (last_cmake_args or [])
+        self._store_cmake_args(args.build_base, args.cmake_args)
 
         if not run_configure:
             return
