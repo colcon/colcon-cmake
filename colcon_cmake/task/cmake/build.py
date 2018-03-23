@@ -134,18 +134,19 @@ class CmakeBuildTask(TaskExtensionPoint):
 
     def _get_last_cmake_args(self, build_base):
         path = self._get_last_cmake_args_path(build_base)
-        if not os.path.exists(path):
+        if not path.exists():
             return []
-        with open(self._get_last_cmake_args_path(build_base), 'r') as h:
+        with path.open('r') as h:
             content = h.read()
         return ast.literal_eval(content)
 
     def _store_cmake_args(self, build_base, cmake_args):
-        with open(self._get_last_cmake_args_path(build_base), 'w') as h:
+        path = self._get_last_cmake_args_path(build_base)
+        with path.open('w') as h:
             h.write(str(cmake_args))
 
     def _get_last_cmake_args_path(self, build_base):
-        return os.path.join(build_base, 'cmake_args.last')
+        return Path(build_base) / 'cmake_args.last'
 
     async def _build(self, args, env):
         self.progress('build')
