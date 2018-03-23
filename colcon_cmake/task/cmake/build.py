@@ -135,10 +135,17 @@ class CmakeBuildTask(TaskExtensionPoint):
     def _get_last_cmake_args(self, build_base):
         path = self._get_last_cmake_args_path(build_base)
         if not path.exists():
-            return []
+            return None
         with path.open('r') as h:
             content = h.read()
-        return ast.literal_eval(content)
+        try:
+            return ast.literal_eval(content)
+        except SyntaxError as e:
+            logger.error(
+                "Failed to parse previous --cmake-args from '{path}': {e}"
+                .format_map(locals())
+            )
+            return None
 
     def _store_cmake_args(self, build_base, cmake_args):
         path = self._get_last_cmake_args_path(build_base)
