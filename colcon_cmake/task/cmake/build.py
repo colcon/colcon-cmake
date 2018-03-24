@@ -98,9 +98,8 @@ class CmakeBuildTask(TaskExtensionPoint):
         # check CMake args from last run to decide on need to reconfigure
         if not run_configure:
             last_cmake_args = self._get_last_cmake_args(args.build_base)
-            run_configure = (args.cmake_args != last_cmake_args)
-        if run_configure:
-            self._store_cmake_args(args.build_base, args.cmake_args)
+            run_configure = (args.cmake_args or []) != (last_cmake_args or [])
+        self._store_cmake_args(args.build_base, args.cmake_args)
 
         if not run_configure:
             return
@@ -134,18 +133,26 @@ class CmakeBuildTask(TaskExtensionPoint):
 
     def _get_last_cmake_args(self, build_base):
         path = self._get_last_cmake_args_path(build_base)
-        if not os.path.exists(path):
-            return []
-        with open(self._get_last_cmake_args_path(build_base), 'r') as h:
+        if not path.exists():
+            return None
+        with path.open('r') as h:
             content = h.read()
-        return ast.literal_eval(content)
+        try:
+            return ast.literal_eval(content)
+        except SyntaxError as e:
+            logger.error(
+                "Failed to parse previous --cmake-args from '{path}': {e}"
+                .format_map(locals())
+            )
+            return None
 
     def _store_cmake_args(self, build_base, cmake_args):
-        with open(self._get_last_cmake_args_path(build_base), 'w') as h:
+        path = self._get_last_cmake_args_path(build_base)
+        with path.open('w') as h:
             h.write(str(cmake_args))
 
     def _get_last_cmake_args_path(self, build_base):
-        return os.path.join(build_base, 'cmake_args.last')
+        return Path(build_base) / 'cmake_args.last'
 
     async def _build(self, args, env):
         self.progress('build')
