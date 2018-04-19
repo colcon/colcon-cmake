@@ -100,6 +100,9 @@ class CmakeTestTask(TaskExtensionPoint):
                 rerun += 1
                 continue
 
+            # if CTest reports failing tests the return code should still be 0
+            if rc.returncode == 8:
+                return 0
             return rc.returncode
 
     def _get_configuration_from_cmake(self, build_base):
