@@ -128,13 +128,13 @@ def _remove_cmake_comments_from_line(line):
 
 def get_regex_extract_first_argument():
     """
-    Return the regex used to extract the first argument of a function call.
+    Return the reg ex used to extract the first argument of a function call.
 
     The function call must be on a single line
-    and the first argument must be a literal string for this regex to be
+    and the first argument must be a literal string for this reg ex to be
     able to extract the first argument.
 
-    :returns: The regex pattern to apply
+    :returns: The reg ex pattern to apply
     :rtype: str
     """
     regex = (
@@ -146,7 +146,7 @@ def get_regex_extract_first_argument():
         '\s*'
         # optional "opening" quote
         '("?)'
-        # first argument litteral string
+        # first argument literal string
         '([a-zA-Z0-9_-]+)'
         # optional "closing" quote (only if an "opening" quote was used)
         r'\1'
@@ -176,7 +176,7 @@ def extract_project_name(content):
     match = re.search(
         # keyword
         'project' +
-        # function arguments regex
+        # regular expression to get first function argument
         get_regex_extract_first_argument(),
         content)
     if not match:
@@ -205,7 +205,7 @@ def _extract_find_package_calls(content):
     matches = re.findall(
         # function name
         'find_package' +
-        # function arguments regex
+        # regular expression to get first function argument
         get_regex_extract_first_argument(),
         content)
     return {m[1] for m in matches}
