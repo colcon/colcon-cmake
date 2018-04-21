@@ -176,14 +176,24 @@ def extract_dependencies(content):
     :rtype: list
     """
     return \
-        _extract_find_package_calls(content) | \
+        extract_find_package_calls(content) | \
         _extract_pkg_config_calls(content)
 
 
-def _extract_find_package_calls(content):
+def extract_find_package_calls(content, *, function_name='find_package'):
+    """
+    Extract `find_package()`-like calls from the CMake code.
+
+    The function call must be on a single line and the first argument must be
+    a literal string for this function to be able to extract it.
+
+    :param str content: The CMake source code
+    :returns: The first arguments of the functions (in the case of
+      `find_package()` these are the package names)
+    :rtype: set
+    """
     matches = re.findall(
-        # function name
-        'find_package'
+        function_name +
         # optional white space
         '\s*'
         # open parenthesis
