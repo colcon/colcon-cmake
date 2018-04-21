@@ -126,6 +126,41 @@ def _remove_cmake_comments_from_line(line):
     return modline
 
 
+def get_regex_extract_first_argument():
+    """
+    Return the regex used to extract the first argument of a function call.
+
+    The function call must be on a single line
+    and the first argument must be a literal string for this regex to be
+    able to extract the first argument.
+
+    :returns: The regex pattern to apply
+    :rtype: str
+    """
+    regex = (
+        # optional white space
+        '\s*'
+        # open parenthesis
+        '\('
+        # optional white space
+        '\s*'
+        # optional "opening" quote
+        '("?)'
+        # first argument litteral string
+        '([a-zA-Z0-9_-]+)'
+        # optional "closing" quote (only if an "opening" quote was used)
+        r'\1'
+        # white space
+        '(\s+'
+        # optional arguments
+        '[^\)]*)?'
+        # close parenthesis
+        '\)'
+    )
+
+    return regex
+
+
 def extract_project_name(content):
     """
     Extract the CMake project name from the CMake code.
@@ -140,23 +175,9 @@ def extract_project_name(content):
     # extract project name
     match = re.search(
         # keyword
-        'project'
-        # optional white space
-        '\s*'
-        # open parenthesis
-        '\('
-        # optional white space
-        '\s*'
-        # optional "opening" quote
-        '("?)'
-        # project name
-        '([a-zA-Z0-9_-]+)'
-        # optional "closing" quote (only if an "opening" quote was used)
-        r'\1'
-        # optional language
-        '(\s+[^\)]*)?'
-        # close parenthesis
-        '\)',
+        'project' +
+        # function arguments regex
+        get_regex_extract_first_argument(),
         content)
     if not match:
         return None
@@ -183,25 +204,9 @@ def extract_dependencies(content):
 def _extract_find_package_calls(content):
     matches = re.findall(
         # function name
-        'find_package'
-        # optional white space
-        '\s*'
-        # open parenthesis
-        '\('
-        # optional white space
-        '\s*'
-        # optional "opening" quote
-        '("?)'
-        # package name
-        '([a-zA-Z0-9_-]+)'
-        # optional "closing" quote (only if an "opening" quote was used)
-        r'\1'
-        # white space
-        '(\s+'
-        # optional arguments
-        '[^\)]*)?'
-        # close parenthesis
-        '\)',
+        'find_package' +
+        # function arguments regex
+        get_regex_extract_first_argument(),
         content)
     return {m[1] for m in matches}
 
