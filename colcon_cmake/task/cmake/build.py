@@ -40,10 +40,18 @@ class CmakeBuildTask(TaskExtensionPoint):
             '(args which start with a dash must be prefixed with an escaped '
             'space `\ `, e.g.: `--cmake-args \ -Dvar=val`)')
         parser.add_argument(
+            '--cmake-target',
+            help='Build a specific target instead of default targets.')
+        parser.add_argument(
             '--cmake-clean-cache',
             action='store_true',
             help='Remove CMake cache before the build (implicitly forcing '
                  'CMake configure step)')
+        parser.add_argument(
+            '--cmake-clean-first',
+            action='store_true',
+            help="Build target 'clean' first, then build (to only clean use "
+                 "'--cmake-target clean')")
         parser.add_argument(
             '--cmake-force-configure',
             action='store_true',
@@ -70,14 +78,16 @@ class CmakeBuildTask(TaskExtensionPoint):
         if rc.returncode:
             return rc.returncode
 
-        if await has_target(args.build_base, 'install'):
-            rc = await self._install(args, env)
-            if rc.returncode:
-                return rc.returncode
-        else:
-            logger.warn(
-                "Could not run installation step for package '{pkg.name}' "
-                "because it has no 'install' target".format_map(locals()))
+        # skip install step if a specific target was requested
+        if not args.cmake_target:
+            if await has_target(args.build_base, 'install'):
+                rc = await self._install(args, env)
+                if rc.returncode:
+                    return rc.returncode
+            else:
+                logger.warn(
+                    "Could not run installation step for package '{pkg.name}' "
+                    "because it has no 'install' target".format_map(locals()))
 
         create_environment_scripts(
             pkg, args, additional_hooks=additional_hooks)
@@ -161,6 +171,10 @@ class CmakeBuildTask(TaskExtensionPoint):
         if CMAKE_EXECUTABLE is None:
             raise RuntimeError("Could not find 'cmake' executable")
         cmd = [CMAKE_EXECUTABLE, '--build', args.build_base]
+        if args.cmake_target:
+            cmd += ['--target', args.cmake_target]
+        if args.cmake_clean_first:
+            cmd += ['--clean-first']
         if is_multi_configuration_generator(args.build_base, args.cmake_args):
             cmd += ['--config', self._get_configuration(args)]
         else:
