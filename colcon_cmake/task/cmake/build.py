@@ -36,9 +36,9 @@ class CmakeBuildTask(TaskExtensionPoint):
         parser.add_argument(
             '--cmake-args',
             nargs='*', metavar='*', type=str.lstrip,
-            help='Arbitrary arguments which are passed to all CMake projects '
-            '(args which start with a dash must be prefixed with an escaped '
-            'space `\ `, e.g.: `--cmake-args \ -Dvar=val`)')
+            help='Pass arguments to all CMake projects. Every arg starting '
+            'with a dash must be prefixed by a space,\n'
+            'e.g. --cmake-args " -Dvar=val"')
         parser.add_argument(
             '--cmake-target',
             help='Build a specific target instead of default targets.')
