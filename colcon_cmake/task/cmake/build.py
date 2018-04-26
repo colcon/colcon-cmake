@@ -36,10 +36,12 @@ class CmakeBuildTask(TaskExtensionPoint):
         parser.add_argument(
             '--cmake-args',
             nargs='*', metavar='*', type=str.lstrip,
-            help='Arbitrary arguments which are passed to all CMake projects '
-            '(Args that start with "-" must be prefixed with a space. '
-            'If using bash then use `\ `, e.g.: `--cmake-args \ -Dvar=val`. '
-            'If using Windows cmd then use: `--cmake-args " -Dvar=var"`)')
+            help='Arbitrary arguments which are passed to all CMake projects. '
+            'Args that start with "-" must be prefixed with a space. '
+            'If using bash then use'
+            '\n\t--cmake-args \ -Dvar=val\n'
+            'If using Windows cmd then use'
+            '\n\t--cmake-args " -Dvar=val"\n')
         parser.add_argument(
             '--cmake-clean-cache',
             action='store_true',

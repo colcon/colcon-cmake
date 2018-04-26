@@ -26,9 +26,12 @@ class CmakeTestTask(TaskExtensionPoint):
         parser.add_argument(
             '--ctest-args',
             nargs='*', metavar='*', type=str.lstrip,
-            help='Arbitrary arguments which are passed to all CTest projects '
-            '(args which start with a dash must be prefixed with an escaped '
-            'space `\ `, e.g.: `--ctest-args \ -L label`)')
+            help='Arbitrary arguments which are passed to all CTest projects. '
+            'Args that start with "-" must be prefixed with a space. '
+            'If using bash then use'
+            '\n\t--ctest-args \ -L label\n'
+            'If using Windows cmd then use'
+            '\n\t--ctest-args " -L" label\n')
 
     async def test(self, *, additional_hooks=None):  # noqa: D102
         pkg = self.context.pkg
