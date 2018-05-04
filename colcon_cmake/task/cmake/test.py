@@ -5,6 +5,7 @@ import os
 
 from colcon_cmake.task.cmake import CTEST_EXECUTABLE
 from colcon_cmake.task.cmake import get_variable_from_cmake_cache
+from colcon_core.event.test import TestFailure
 from colcon_core.logging import colcon_logger
 from colcon_core.plugin_system import satisfies_version
 from colcon_core.shell import get_command_environment
@@ -100,8 +101,10 @@ class CmakeTestTask(TaskExtensionPoint):
                 rerun += 1
                 continue
 
-            # if CTest reports failing tests the return code should still be 0
+            # CTest reports failing tests
             if rc.returncode == 8:
+                self.context.put_event_into_queue(TestFailure(pkg.name))
+                # the return code should still be 0
                 return 0
             return rc.returncode
 
