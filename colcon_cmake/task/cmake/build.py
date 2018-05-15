@@ -177,6 +177,10 @@ class CmakeBuildTask(TaskExtensionPoint):
             cmd += ['--clean-first']
         if is_multi_configuration_generator(args.build_base, args.cmake_args):
             cmd += ['--config', self._get_configuration(args)]
+
+            generator = get_generator(args.build_base)
+            if 'Visual Studio' in generator:
+                env = self._get_msbuild_environment(args, env)
         else:
             job_args = self._get_make_arguments()
             if job_args:
@@ -198,6 +202,23 @@ class CmakeBuildTask(TaskExtensionPoint):
         if build_type in ('Debug', ):
             return 'Debug'
         return 'Release'
+
+    def _get_msbuild_environment(self, args, env):
+        generator = get_generator(args.build_base)
+        if 'Visual Studio' in generator:
+            if 'CL' in env:
+                cl_split = env['CL'].split(' ')
+                # check that /MP* isn't set already
+                if any(x.startswith('/MP') for x in cl_split):
+                    # otherwise avoid overriding existing parameters
+                    return env
+            else:
+                cl_split = []
+            # build with multiple processes using the number of processors
+            cl_split.append('/MP')
+            env = dict(env)
+            env['CL'] = ' '.join(cl_split)
+        return env
 
     def _get_make_arguments(self):
         """
