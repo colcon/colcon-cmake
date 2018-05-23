@@ -112,6 +112,6 @@ class CmakeTestTask(TaskExtensionPoint):
         # get for CMake build type from the CMake cache
         build_type = get_variable_from_cmake_cache(
             build_base, 'CMAKE_BUILD_TYPE')
-        if build_type in ['Debug']:
-            return 'Debug'
+        if build_type in ('Debug', 'MinSizeRel', 'RelWithDebInfo'):
+            return build_type
         return 'Release'
