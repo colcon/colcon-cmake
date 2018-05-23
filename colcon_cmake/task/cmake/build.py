@@ -57,7 +57,9 @@ class CmakeBuildTask(TaskExtensionPoint):
             action='store_true',
             help='Force CMake configure step')
 
-    async def build(self, *, additional_hooks=None):  # noqa: D102
+    async def build(
+        self, *, additional_hooks=None, skip_hook_creation=False
+    ):  # noqa: D102
         pkg = self.context.pkg
         args = self.context.args
 
@@ -89,8 +91,9 @@ class CmakeBuildTask(TaskExtensionPoint):
                     "Could not run installation step for package '{pkg.name}' "
                     "because it has no 'install' target".format_map(locals()))
 
-        create_environment_scripts(
-            pkg, args, additional_hooks=additional_hooks)
+        if not skip_hook_creation:
+            create_environment_scripts(
+                pkg, args, additional_hooks=additional_hooks)
 
     async def _reconfigure(self, args, env):
         self.progress('cmake')
