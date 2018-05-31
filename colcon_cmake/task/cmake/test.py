@@ -27,9 +27,9 @@ class CmakeTestTask(TaskExtensionPoint):
         parser.add_argument(
             '--ctest-args',
             nargs='*', metavar='*', type=str.lstrip,
-            help='Pass arguments to all CTest projects. Every arg starting '
-            'with a dash must be prefixed by a space,\n'
-            'e.g. --ctest-args " -L" label')
+            help='Pass arguments to CTest projects. '
+            'Arguments matching other options must be prefixed by a space,\n'
+            'e.g. --ctest-args " --help"')
 
     async def test(self, *, additional_hooks=None):  # noqa: D102
         pkg = self.context.pkg
