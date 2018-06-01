@@ -36,12 +36,12 @@ class CmakeBuildTask(TaskExtensionPoint):
         parser.add_argument(
             '--cmake-args',
             nargs='*', metavar='*', type=str.lstrip,
-            help='Pass arguments to all CMake projects. Every arg starting '
-            'with a dash must be prefixed by a space,\n'
-            'e.g. --cmake-args " -Dvar=val"')
+            help='Pass arguments to CMake projects. '
+            'Arguments matching other options must be prefixed by a space,\n'
+            'e.g. --cmake-args " --help"')
         parser.add_argument(
             '--cmake-target',
-            help='Build a specific target instead of default targets.')
+            help='Build a specific target instead of default targets')
         parser.add_argument(
             '--cmake-clean-cache',
             action='store_true',
