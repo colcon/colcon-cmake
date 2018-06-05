@@ -76,6 +76,19 @@ class CmakeBuildTask(TaskExtensionPoint):
         rc = await self._reconfigure(args, env)
         if rc and rc.returncode:
             return rc.returncode
+
+        # ensure that CMake cache contains the project name
+        project_name = get_variable_from_cmake_cache(
+            args.build_base, 'CMAKE_PROJECT_NAME')
+        if project_name is None:
+            # if not the CMake code hasn't called project() and can't be built
+            logger.warn(
+                "Could not build CMake package '{args.name}' because the "
+                "CMake cache has no 'CMAKE_PROJECT_NAME' variable"
+                .format_map(locals())
+            )
+            return
+
         rc = await self._build(args, env)
         if rc.returncode:
             return rc.returncode
