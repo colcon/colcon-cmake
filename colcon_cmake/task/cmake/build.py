@@ -41,7 +41,12 @@ class CmakeBuildTask(TaskExtensionPoint):
             'e.g. --cmake-args " --help"')
         parser.add_argument(
             '--cmake-target',
-            help='Build a specific target instead of default targets')
+            help='Build a specific target instead of the default target')
+        parser.add_argument(
+            '--cmake-target-skip-unavailable',
+            action='store_true',
+            help="Skip building packages which don't have the target passed "
+                 'to --cmake-target')
         parser.add_argument(
             '--cmake-clean-cache',
             action='store_true',
@@ -90,7 +95,7 @@ class CmakeBuildTask(TaskExtensionPoint):
             return
 
         rc = await self._build(args, env)
-        if rc.returncode:
+        if rc and rc.returncode:
             return rc.returncode
 
         # skip install step if a specific target was requested
@@ -188,6 +193,9 @@ class CmakeBuildTask(TaskExtensionPoint):
             raise RuntimeError("Could not find 'cmake' executable")
         cmd = [CMAKE_EXECUTABLE, '--build', args.build_base]
         if args.cmake_target:
+            if args.cmake_target_skip_unavailable:
+                if not await has_target(args.build_base, args.cmake_target):
+                    return
             cmd += ['--target', args.cmake_target]
         if args.cmake_clean_first:
             cmd += ['--clean-first']
