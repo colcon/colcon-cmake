@@ -10,7 +10,7 @@ from colcon_core.shell import create_environment_hook
 
 
 class CmakeModulePathEnvironment(EnvironmentExtensionPoint):
-    """Extend the `CMAKE_PREFIX_PATH` variable to find CMake modules."""
+    """Extend the `CMAKE_MODULE_PATH` variable to find CMake modules."""
 
     def __init__(self):  # noqa: D107
         super().__init__()
@@ -21,12 +21,17 @@ class CmakeModulePathEnvironment(EnvironmentExtensionPoint):
         hooks = []
 
         logger.log(1, "checking '%s' for CMake module files" % prefix_path)
+        count = 0
         for dirpath, _, filenames in os.walk(str(prefix_path)):
             for filename in filenames:
                 if filename.startswith('Find') and filename.endswith('.cmake'):
+                    count += 1
                     hooks += create_environment_hook(
-                        'cmake_module_path', prefix_path / dirpath,
-                        pkg_name, 'CMAKE_MODULE_PATH', '', mode='prepend')
+                        'cmake_module_path' +
+                        (str(count) if count > 1 else ''),
+                        prefix_path, pkg_name, 'CMAKE_MODULE_PATH',
+                        os.path.relpath(dirpath, start=str(prefix_path)),
+                        mode='prepend')
                     break
 
         return hooks
