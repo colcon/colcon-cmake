@@ -37,10 +37,10 @@ class CmakePackageIdentification(PackageIdentificationExtensionPoint):
         if metadata.name is None:
             metadata.name = data['name']
 
-        metadata.dependencies['build'] |= {DependencyDescriptor(name)
-                                           for name in data['depends']}
-        metadata.dependencies['run'] |= {DependencyDescriptor(name)
-                                         for name in data['depends']}
+        metadata.dependencies['build'] |= {
+            DependencyDescriptor(name) for name in data['depends']}
+        metadata.dependencies['run'] |= {
+            DependencyDescriptor(name) for name in data['depends']}
 
 
 def extract_data(cmakelists_txt):
