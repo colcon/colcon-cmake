@@ -142,11 +142,11 @@ def extract_project_name(content):
         # keyword
         'project'
         # optional white space
-        '\s*'
+        r'\s*'
         # open parenthesis
-        '\('
+        r'\('
         # optional white space
-        '\s*'
+        r'\s*'
         # optional "opening" quote
         '("?)'
         # project name
@@ -154,9 +154,9 @@ def extract_project_name(content):
         # optional "closing" quote (only if an "opening" quote was used)
         r'\1'
         # optional language
-        '(\s+[^\)]*)?'
+        r'(\s+[^\)]*)?'
         # close parenthesis
-        '\)',
+        r'\)',
         content)
     if not match:
         return None
@@ -195,11 +195,11 @@ def extract_find_package_calls(content, *, function_name='find_package'):
     matches = re.findall(
         function_name +
         # optional white space
-        '\s*'
+        r'\s*'
         # open parenthesis
-        '\('
+        r'\('
         # optional white space
-        '\s*'
+        r'\s*'
         # optional "opening" quote
         '("?)'
         # package name
@@ -207,11 +207,11 @@ def extract_find_package_calls(content, *, function_name='find_package'):
         # optional "closing" quote (only if an "opening" quote was used)
         r'\1'
         # white space
-        '(\s+'
+        r'(\s+'
         # optional arguments
-        '[^\)]*)?'
+        r'[^\)]*)?'
         # close parenthesis
-        '\)',
+        r'\)',
         content)
     return {m[1] for m in matches}
 
@@ -221,11 +221,11 @@ def _extract_pkg_config_calls(content):
         # function name
         '(?:pkg_check_modules|pkg_search_module)'
         # optional white space
-        '\s*'
+        r'\s*'
         # open parenthesis
-        '\('
+        r'\('
         # optional white space
-        '\s*'
+        r'\s*'
         # optional "opening" quote
         '("?)'
         # prefix
@@ -233,11 +233,11 @@ def _extract_pkg_config_calls(content):
         # optional "closing" quote (only if an "opening" quote was used)
         r'\1'
         # optional options prefixed by white space
-        '(?:\s+(?:REQUIRED|QUIET|NO_CMAKE_PATH|NO_CMAKE_ENVIRONMENT_PATH))*'
+        r'(?:\s+(?:REQUIRED|QUIET|NO_CMAKE_PATH|NO_CMAKE_ENVIRONMENT_PATH))*'
         # package names prefixed by white space with opt. trailing white space
         '([^)]+)'
         # close parenthesis
-        '\)',
+        r'\)',
         content)
     names = set()
     for modules in [m[1].strip() for m in matches]:
