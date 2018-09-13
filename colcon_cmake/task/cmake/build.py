@@ -87,7 +87,7 @@ class CmakeBuildTask(TaskExtensionPoint):
             args.build_base, 'CMAKE_PROJECT_NAME')
         if project_name is None:
             # if not the CMake code hasn't called project() and can't be built
-            logger.warn(
+            logger.warning(
                 "Could not build CMake package '{args.name}' because the "
                 "CMake cache has no 'CMAKE_PROJECT_NAME' variable"
                 .format_map(locals())
@@ -105,7 +105,7 @@ class CmakeBuildTask(TaskExtensionPoint):
                 if rc.returncode:
                     return rc.returncode
             else:
-                logger.warn(
+                logger.warning(
                     "Could not run installation step for package '{pkg.name}' "
                     "because it has no 'install' target".format_map(locals()))
 
