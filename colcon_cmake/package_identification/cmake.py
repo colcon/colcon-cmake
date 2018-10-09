@@ -140,7 +140,7 @@ def extract_project_name(content):
     # extract project name
     match = re.search(
         # keyword
-        'project|PROJECT'
+        '[p|P][r|R][o|O][j|J][e|E][c|C][t|T]'
         # optional white space
         r'\s*'
         # open parenthesis
