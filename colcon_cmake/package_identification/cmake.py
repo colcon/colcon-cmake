@@ -140,7 +140,7 @@ def extract_project_name(content):
     # extract project name
     match = re.search(
         # keyword
-        '[p|P][r|R][o|O][j|J][e|E][c|C][t|T]'
+        'project'
         # optional white space
         r'\s*'
         # open parenthesis
@@ -157,7 +157,8 @@ def extract_project_name(content):
         r'(\s+[^\)]*)?'
         # close parenthesis
         r'\)',
-        content)
+        content,
+        re.IGNORECASE)
     if not match:
         return None
     return match.group(2)
@@ -212,7 +213,8 @@ def extract_find_package_calls(content, *, function_name='find_package'):
         r'[^\)]*)?'
         # close parenthesis
         r'\)',
-        content)
+        content,
+        re.IGNORECASE)
     return {m[1] for m in matches}
 
 
@@ -238,7 +240,8 @@ def _extract_pkg_config_calls(content):
         '([^)]+)'
         # close parenthesis
         r'\)',
-        content)
+        content,
+        re.IGNORECASE)
     names = set()
     for modules in [m[1].strip() for m in matches]:
         # split multiple modules
