@@ -4,6 +4,7 @@
 import os
 from pathlib import Path
 import re
+import sys
 
 from colcon_core.package_identification \
     import PackageIdentificationExtensionPoint
@@ -139,8 +140,8 @@ def extract_project_name(content):
     """
     # extract project name
     match = re.search(
-        # keyword
-        'project'
+        # case insensitive function name
+        _get_pattern('project') +
         # optional white space
         r'\s*'
         # open parenthesis
@@ -193,7 +194,8 @@ def extract_find_package_calls(content, *, function_name='find_package'):
     :rtype: set
     """
     matches = re.findall(
-        function_name +
+        # case insensitive function name
+        _get_pattern(function_name) +
         # optional white space
         r'\s*'
         # open parenthesis
@@ -217,9 +219,12 @@ def extract_find_package_calls(content, *, function_name='find_package'):
 
 
 def _extract_pkg_config_calls(content):
+    pattern1 = _get_pattern('pkg_check_modules')
+    pattern2 = _get_pattern('pkg_search_module')
+    function_names_pattern = '(?:{pattern1}|{pattern2})'.format_map(locals())
     matches = re.findall(
-        # function name
-        '(?:pkg_check_modules|pkg_search_module)'
+        # case insensitive function names
+        function_names_pattern +
         # optional white space
         r'\s*'
         # open parenthesis
@@ -249,3 +254,17 @@ def _extract_pkg_config_calls(content):
                     module = module[:module.index(char)]
             names.add(module)
     return names
+
+
+def _get_pattern(value):
+    # non-capturing case insensitive pattern for a string literal
+    if sys.version_info[:2] < (3, 6):
+        # match each character separately with arbitrary case
+        pattern = ''
+        for char in value:
+            if char.lower() != char.upper():
+                pattern += '[' + char.lower() + char.upper() + ']'
+            else:
+                pattern += char
+        return pattern
+    return '(?i:{value})'.format_map(locals())
