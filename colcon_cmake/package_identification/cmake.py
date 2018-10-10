@@ -141,7 +141,7 @@ def extract_project_name(content):
     # extract project name
     match = re.search(
         # case insensitive function name
-        _get_pattern('project') +
+        _get_case_insensitive_pattern('project') +
         # optional white space
         r'\s*'
         # open parenthesis
@@ -195,7 +195,7 @@ def extract_find_package_calls(content, *, function_name='find_package'):
     """
     matches = re.findall(
         # case insensitive function name
-        _get_pattern(function_name) +
+        _get_case_insensitive_pattern(function_name) +
         # optional white space
         r'\s*'
         # open parenthesis
@@ -219,8 +219,8 @@ def extract_find_package_calls(content, *, function_name='find_package'):
 
 
 def _extract_pkg_config_calls(content):
-    pattern1 = _get_pattern('pkg_check_modules')
-    pattern2 = _get_pattern('pkg_search_module')
+    pattern1 = _get_case_insensitive_pattern('pkg_check_modules')
+    pattern2 = _get_case_insensitive_pattern('pkg_search_module')
     function_names_pattern = '(?:{pattern1}|{pattern2})'.format_map(locals())
     matches = re.findall(
         # case insensitive function names
@@ -256,7 +256,7 @@ def _extract_pkg_config_calls(content):
     return names
 
 
-def _get_pattern(value):
+def _get_case_insensitive_pattern(value):
     # non-capturing case insensitive pattern for a string literal
     if sys.version_info[:2] < (3, 6):
         # match each character separately with arbitrary case
