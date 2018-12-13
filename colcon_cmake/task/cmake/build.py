@@ -170,7 +170,7 @@ class CmakeBuildTask(TaskExtensionPoint):
             content = h.read()
         try:
             return ast.literal_eval(content)
-        except SyntaxError as e:
+        except SyntaxError as e:  # noqa: F841
             logger.error(
                 "Failed to parse previous --cmake-args from '{path}': {e}"
                 .format_map(locals())
