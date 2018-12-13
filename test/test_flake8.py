@@ -15,11 +15,11 @@ LOG.setLevel(logging.WARN)
 
 def test_flake8():
     style_guide = get_style_guide(
-        ignore=['D100', 'D104'],
+        extend_ignore=['D100', 'D104'],
         show_source=True,
     )
     style_guide_tests = get_style_guide(
-        ignore=['D100', 'D101', 'D102', 'D103', 'D104', 'D105', 'D107'],
+        extend_ignore=['D100', 'D101', 'D102', 'D103', 'D104', 'D105', 'D107'],
         show_source=True,
     )
 
@@ -38,10 +38,14 @@ def test_flake8():
     if total_errors:  # pragma: no cover
         # output summary with per-category counts
         print()
-        report._application.formatter.show_statistics(report._stats)
+        if report.total_errors:
+            report._application.formatter.show_statistics(report._stats)
+        if report_tests.total_errors:
+            report_tests._application.formatter.show_statistics(
+                report_tests._stats)
         print(
             'flake8 reported {total_errors} errors'
             .format_map(locals()), file=sys.stderr)
 
-    assert not report.total_errors, \
+    assert not total_errors, \
         'flake8 reported {total_errors} errors'.format_map(locals())
