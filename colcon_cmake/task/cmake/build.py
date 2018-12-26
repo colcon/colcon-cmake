@@ -63,7 +63,8 @@ class CmakeBuildTask(TaskExtensionPoint):
             help='Force CMake configure step')
 
     async def build(
-        self, *, additional_hooks=None, skip_hook_creation=False
+        self, *, additional_hooks=None, skip_hook_creation=False,
+        environment_callback=None
     ):  # noqa: D102
         pkg = self.context.pkg
         args = self.context.args
@@ -77,6 +78,9 @@ class CmakeBuildTask(TaskExtensionPoint):
         except RuntimeError as e:
             logger.error(str(e))
             return 1
+
+        if environment_callback is not None:
+            environment_callback(env)
 
         rc = await self._reconfigure(args, env)
         if rc and rc.returncode:
