@@ -7,8 +7,8 @@ install:
   # install_requires
   - "%PYTHON%\\python.exe -m pip install -U git+https://github.com/colcon/colcon-core"
   - "%PYTHON%\\python.exe -m pip install -U git+https://github.com/colcon/colcon-library-path"
-  # tests_require, except pyenchant
-  - "%PYTHON%\\python.exe -m pip install -U flake8-blind-except flake8-builtins flake8-class-newline flake8-comprehensions flake8-deprecated flake8-docstrings flake8-quotes pep8-naming pylint pytest pytest-cov"
+  # tests_require
+  - "%PYTHON%\\python.exe -m pip install -U flake8-blind-except flake8-builtins flake8-class-newline flake8-comprehensions flake8-deprecated flake8-docstrings flake8-quotes pep8-naming pylint pytest pytest-cov scspell3k"
 build: off
 test_script:
   # invoke pytest
