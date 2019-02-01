@@ -64,7 +64,7 @@ class CmakeBuildTask(TaskExtensionPoint):
 
     async def build(
         self, *, additional_hooks=None, skip_hook_creation=False,
-        environment_callback=None
+        environment_callback=None, additional_targets=None
     ):  # noqa: D102
         pkg = self.context.pkg
         args = self.context.args
@@ -98,7 +98,8 @@ class CmakeBuildTask(TaskExtensionPoint):
             )
             return
 
-        rc = await self._build(args, env)
+        rc = await self._build(
+            args, env, additional_targets=additional_targets)
         if rc and rc.returncode:
             return rc.returncode
 
@@ -189,32 +190,49 @@ class CmakeBuildTask(TaskExtensionPoint):
     def _get_last_cmake_args_path(self, build_base):
         return Path(build_base) / 'cmake_args.last'
 
-    async def _build(self, args, env):
+    async def _build(self, args, env, *, additional_targets=None):
         self.progress('build')
 
         # invoke build step
         if CMAKE_EXECUTABLE is None:
             raise RuntimeError("Could not find 'cmake' executable")
-        cmd = [CMAKE_EXECUTABLE, '--build', args.build_base]
-        if args.cmake_target:
-            if args.cmake_target_skip_unavailable:
-                if not await has_target(args.build_base, args.cmake_target):
-                    return
-            cmd += ['--target', args.cmake_target]
-        if args.cmake_clean_first:
-            cmd += ['--clean-first']
-        if is_multi_configuration_generator(args.build_base, args.cmake_args):
-            cmd += ['--config', self._get_configuration(args)]
 
+        targets = []
+        if args.cmake_target:
+            targets.append(args.cmake_target)
+        else:
+            targets.append('')
+            if additional_targets:
+                targets += additional_targets
+
+        multi_configuration_generator = is_multi_configuration_generator(
+            args.build_base, args.cmake_args)
+        if multi_configuration_generator:
             generator = get_generator(args.build_base)
             if 'Visual Studio' in generator:
                 env = self._get_msbuild_environment(args, env)
-        else:
-            job_args = self._get_make_arguments()
-            if job_args:
-                cmd += ['--'] + job_args
-        return await check_call(
-            self.context, cmd, cwd=args.build_base, env=env)
+
+        for i, target in enumerate(targets):
+            if args.cmake_target_skip_unavailable:
+                if not await has_target(args.build_base, target):
+                    continue
+
+            cmd = [CMAKE_EXECUTABLE, '--build', args.build_base]
+            if target:
+                self.progress("build target '{target}'".format_map(locals()))
+                cmd += ['--target', target]
+            if i == 0 and args.cmake_clean_first:
+                cmd += ['--clean-first']
+            if multi_configuration_generator:
+                cmd += ['--config', self._get_configuration(args)]
+            else:
+                job_args = self._get_make_arguments()
+                if job_args:
+                    cmd += ['--'] + job_args
+            rc = await check_call(
+                self.context, cmd, cwd=args.build_base, env=env)
+            if rc:
+                return rc
 
     def _get_configuration(self, args):
         # check for CMake build type in the command line arguments
