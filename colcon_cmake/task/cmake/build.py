@@ -213,12 +213,11 @@ class CmakeBuildTask(TaskExtensionPoint):
                 env = self._get_msbuild_environment(args, env)
 
         for i, target in enumerate(targets):
-            if args.cmake_target_skip_unavailable:
-                if not await has_target(args.build_base, target):
-                    continue
-
             cmd = [CMAKE_EXECUTABLE, '--build', args.build_base]
             if target:
+                if args.cmake_target_skip_unavailable:
+                    if not await has_target(args.build_base, target):
+                        continue
                 self.progress("build target '{target}'".format_map(locals()))
                 cmd += ['--target', target]
             if i == 0 and args.cmake_clean_first:
