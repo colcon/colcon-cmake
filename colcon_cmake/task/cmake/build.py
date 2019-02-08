@@ -230,8 +230,8 @@ class CmakeBuildTask(TaskExtensionPoint):
                     cmd += ['--'] + job_args
             rc = await check_call(
                 self.context, cmd, cwd=args.build_base, env=env)
-            if rc:
-                return rc
+            if rc and rc.returncode:
+                return rc.returncode
 
     def _get_configuration(self, args):
         # check for CMake build type in the command line arguments
