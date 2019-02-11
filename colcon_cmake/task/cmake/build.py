@@ -231,7 +231,7 @@ class CmakeBuildTask(TaskExtensionPoint):
             rc = await check_call(
                 self.context, cmd, cwd=args.build_base, env=env)
             if rc and rc.returncode:
-                return rc.returncode
+                return rc
 
     def _get_configuration(self, args):
         # check for CMake build type in the command line arguments
