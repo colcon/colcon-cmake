@@ -9,6 +9,7 @@ completers
 ctest
 ctests
 dcmake
+getaffinity
 github
 https
 iterdir
