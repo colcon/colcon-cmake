@@ -38,7 +38,8 @@ class CmakeTestTask(TaskExtensionPoint):
         logger.info(
             "Testing CMake package in '{args.path}'".format_map(locals()))
 
-        assert os.path.exists(args.build_base)
+        assert os.path.exists(args.build_base), \
+            'Has this package been built before?'
 
         try:
             env = await get_command_environment(
