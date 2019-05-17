@@ -9,7 +9,9 @@ completers
 ctest
 ctests
 dcmake
+etree
 getaffinity
+getchildren
 github
 https
 iterdir
@@ -23,6 +25,7 @@ modline
 msbuild
 nargs
 noqa
+notrun
 pathlib
 plugin
 prepend
