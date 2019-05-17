@@ -28,13 +28,9 @@ class CtestTestResult(TestResultExtensionPoint):
 
     def get_test_results(self, basepath, *, collect_details):  # noqa: D102
         results = set()
-        # only consider direct subdirectories
-        for path in basepath.iterdir():
-            # check for the TAG file in a fixed relative path
-            if not path.is_dir():
-                continue
-            tag_file = path / 'Testing' / 'TAG'
-            if not tag_file.exists():
+        # check all 'TAG' files in a directory named 'Testing'
+        for tag_file in basepath.glob('**/Testing/TAG'):
+            if not tag_file.is_file():
                 continue
 
             # find the latest Test.xml file
@@ -42,7 +38,7 @@ class CtestTestResult(TestResultExtensionPoint):
             latest_xml_path = tag_file.parent / latest_xml_dir / 'Test.xml'
             if not latest_xml_path.exists():
                 logger.warn(
-                    "Skipping '{path}': could not find latest XML file "
+                    "Skipping '{tag_file}': could not find latest XML file "
                     "'{latest_xml_path}'".format_map(locals()))
                 continue
 
