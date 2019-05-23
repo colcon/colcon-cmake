@@ -157,7 +157,7 @@ class CmakeBuildTask(TaskExtensionPoint):
             }
             if vsv not in supported_vsv:
                 raise RuntimeError(
-                    "Unknown / unsupported VS version ''"
+                    "Unknown / unsupported VS version '{vsv}'"
                     .format_map(locals()))
             cmake_args += ['-G', supported_vsv[vsv]]
         if CMAKE_EXECUTABLE is None:
