@@ -152,14 +152,19 @@ class CmakeBuildTask(TaskExtensionPoint):
                     'please run within a Visual Studio Command Prompt.')
             supported_vsv = {
                 '16.0': 'Visual Studio 16 2019',
-                '15.0': 'Visual Studio 15 2017 Win64',
-                '14.0': 'Visual Studio 14 2015 Win64',
+                '15.0': 'Visual Studio 15 2017',
+                '14.0': 'Visual Studio 14 2015',
             }
             if vsv not in supported_vsv:
                 raise RuntimeError(
                     "Unknown / unsupported VS version '{vsv}'"
                     .format_map(locals()))
             cmake_args += ['-G', supported_vsv[vsv]]
+            # choose 'x64' on VS 14 and 15 if not specified explicitly
+            # since otherwise 'Win32' is the default for those
+            # newer versions default to the host architecture
+            if '-A' not in args.cmake_args and vsv in ('14.0', '15.0'):
+                cmake_args += ['-A', 'x64']
         if CMAKE_EXECUTABLE is None:
             raise RuntimeError("Could not find 'cmake' executable")
         os.makedirs(args.build_base, exist_ok=True)
