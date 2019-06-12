@@ -163,7 +163,7 @@ class CmakeBuildTask(TaskExtensionPoint):
             # choose 'x64' on VS 14 and 15 if not specified explicitly
             # since otherwise 'Win32' is the default for those
             # newer versions default to the host architecture
-            if '-A' not in args.cmake_args and vsv in ('14.0', '15.0'):
+            if '-A' not in cmake_args and vsv in ('14.0', '15.0'):
                 cmake_args += ['-A', 'x64']
         if CMAKE_EXECUTABLE is None:
             raise RuntimeError("Could not find 'cmake' executable")
