@@ -26,12 +26,17 @@ class CtestTestResult(TestResultExtensionPoint):
         satisfies_version(
             TestResultExtensionPoint.EXTENSION_POINT_VERSION, '^1.0')
 
-    def get_test_results(self, basepath, *, collect_details):  # noqa: D102
+    def get_test_results(
+        self, basepath, *, collect_details, files=None
+    ):  # noqa: D102
         results = set()
         # check all 'TAG' files in a directory named 'Testing'
         for tag_file in basepath.glob('**/Testing/TAG'):
             if not tag_file.is_file():
                 continue
+
+            if files is not None:
+                files.add(str(tag_file))
 
             # find the latest Test.xml file
             latest_xml_dir = tag_file.read_text().splitlines()[0]
@@ -65,6 +70,9 @@ class CtestTestResult(TestResultExtensionPoint):
                     "Skipping '{latest_xml_path}': the child tag is not "
                     "'Testing'".format_map(locals()))
                 continue
+
+            if files is not None:
+                files.add(str(latest_xml_path))
 
             # collect information from all 'Test' tags
             result = Result(str(latest_xml_path))
