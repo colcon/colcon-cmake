@@ -42,7 +42,7 @@ class CtestTestResult(TestResultExtensionPoint):
             latest_xml_dir = tag_file.read_text().splitlines()[0]
             latest_xml_path = tag_file.parent / latest_xml_dir / 'Test.xml'
             if not latest_xml_path.exists():
-                logger.warn(
+                logger.warning(
                     "Skipping '{tag_file}': could not find latest XML file "
                     "'{latest_xml_path}'".format_map(locals()))
                 continue
@@ -53,7 +53,7 @@ class CtestTestResult(TestResultExtensionPoint):
 
             # check if the root tag looks like a CTest file
             if root.tag != 'Site':
-                logger.warn(
+                logger.warning(
                     "Skipping '{latest_xml_path}': the root tag is not 'Site'"
                     .format_map(locals()))
                 continue
@@ -61,12 +61,12 @@ class CtestTestResult(TestResultExtensionPoint):
             # look for a single 'Testing' child tag
             children = root.getchildren()
             if len(children) != 1:
-                logger.warn(
+                logger.warning(
                     "Skipping '{latest_xml_path}': 'Site' tag is expected to "
                     '"have exactly one child'.format_map(locals()))
                 continue
             if children[0].tag != 'Testing':
-                logger.warn(
+                logger.warning(
                     "Skipping '{latest_xml_path}': the child tag is not "
                     "'Testing'".format_map(locals()))
                 continue
@@ -85,7 +85,7 @@ class CtestTestResult(TestResultExtensionPoint):
                 try:
                     status = child.attrib['Status']
                 except KeyError:
-                    logger.warn(
+                    logger.warning(
                         "Skipping '{latest_xml_path}': a 'test' tag lacks a "
                         "'Status' attribute".format_map(locals()))
                     break
