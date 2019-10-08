@@ -316,12 +316,14 @@ class CmakeBuildTask(TaskExtensionPoint):
         if 'Visual Studio' not in generator:
             if CMAKE_EXECUTABLE is None:
                 raise RuntimeError("Could not find 'cmake' executable")
+            cmd = [
+                CMAKE_EXECUTABLE, '--build', args.build_base,
+                '--target', 'install']
+            job_args = self._get_make_arguments()
+            if job_args:
+                cmd += ['--'] + job_args
             return await check_call(
-                self.context,
-                [
-                    CMAKE_EXECUTABLE, '--build', args.build_base,
-                    '--target', 'install'],
-                cwd=args.build_base, env=env)
+                self.context, cmd, cwd=args.build_base, env=env)
         else:
             if MSBUILD_EXECUTABLE is None:
                 raise RuntimeError("Could not find 'msbuild' executable")
