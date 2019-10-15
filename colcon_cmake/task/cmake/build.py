@@ -144,7 +144,8 @@ class CmakeBuildTask(TaskExtensionPoint):
         cmake_args = [args.path]
         cmake_args += (args.cmake_args or [])
         cmake_args += ['-DCMAKE_INSTALL_PREFIX=' + args.install_base]
-        if os.name == 'nt':
+        generator = get_generator(args.build_base, args.cmake_args)
+        if os.name == 'nt' and generator is None:
             vsv = get_visual_studio_version()
             if vsv is None:
                 raise RuntimeError(
