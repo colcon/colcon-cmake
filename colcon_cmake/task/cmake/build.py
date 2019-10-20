@@ -315,9 +315,13 @@ class CmakeBuildTask(TaskExtensionPoint):
 
         if CMAKE_EXECUTABLE is None:
             raise RuntimeError("Could not find 'cmake' executable")
+        call_args = [
+            CMAKE_EXECUTABLE, '--build', args.build_base,
+            '--target', 'install']
+        multi_configuration_generator = is_multi_configuration_generator(
+            args.build_base, args.cmake_args)
+        if multi_configuration_generator:
+            call_args.append('--config')
+            call_args.append(self._get_configuration(args))
         return await check_call(
-            self.context,
-            [
-                CMAKE_EXECUTABLE, '--build', args.build_base,
-                '--target', 'install'],
-            cwd=args.build_base, env=env)
+            self.context, call_args, cwd=args.build_base, env=env)
