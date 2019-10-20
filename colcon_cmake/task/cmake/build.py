@@ -313,27 +313,11 @@ class CmakeBuildTask(TaskExtensionPoint):
     async def _install(self, args, env):
         self.progress('install')
 
-        generator = get_generator(args.build_base)
-        if 'Visual Studio' not in generator:
-            if CMAKE_EXECUTABLE is None:
-                raise RuntimeError("Could not find 'cmake' executable")
-            cmd = [
+        if CMAKE_EXECUTABLE is None:
+            raise RuntimeError("Could not find 'cmake' executable")
+        return await check_call(
+            self.context,
+            [
                 CMAKE_EXECUTABLE, '--build', args.build_base,
-                '--target', 'install']
-            job_args = self._get_make_arguments()
-            if job_args:
-                cmd += ['--'] + job_args
-            return await check_call(
-                self.context, cmd, cwd=args.build_base, env=env)
-        else:
-            if MSBUILD_EXECUTABLE is None:
-                raise RuntimeError("Could not find 'msbuild' executable")
-            install_project_file = get_project_file(args.build_base, 'INSTALL')
-            return await check_call(
-                self.context,
-                [
-                    MSBUILD_EXECUTABLE,
-                    '/p:Configuration=' +
-                    self._get_configuration(args),
-                    install_project_file],
-                env=env)
+                '--target', 'install'],
+            cwd=args.build_base, env=env)
