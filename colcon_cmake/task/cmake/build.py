@@ -9,12 +9,10 @@ import re
 from colcon_cmake.task.cmake import CMAKE_EXECUTABLE
 from colcon_cmake.task.cmake import get_buildfile
 from colcon_cmake.task.cmake import get_generator
-from colcon_cmake.task.cmake import get_project_file
 from colcon_cmake.task.cmake import get_variable_from_cmake_cache
 from colcon_cmake.task.cmake import get_visual_studio_version
 from colcon_cmake.task.cmake import has_target
 from colcon_cmake.task.cmake import is_multi_configuration_generator
-from colcon_cmake.task.cmake import MSBUILD_EXECUTABLE
 from colcon_core.environment import create_environment_scripts
 from colcon_core.logging import colcon_logger
 from colcon_core.plugin_system import satisfies_version
