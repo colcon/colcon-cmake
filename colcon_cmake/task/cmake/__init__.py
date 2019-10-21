@@ -223,7 +223,7 @@ def _parse_cmake_version(version_str):
     # Version number is on the first line. We can ignore anything else.
     if version_str and len(version_str):
         ver_match = re.match(
-            '^(?:cmake\s+version)?\s+([0-9]+)\.([0-9]+)\.([0-9]+)(?:\-(.*))?\s*.*$',
+            r'^(?:cmake\s+version)?\s+([0-9]+)\.([0-9]+)\.([0-9]+)(?:\-(.*))?\s*.*$',
             version_str)
         if ver_match:
             return (int(ver_match.group(1)), int(ver_match.group(2)),
