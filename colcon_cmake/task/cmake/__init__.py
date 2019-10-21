@@ -221,10 +221,10 @@ def _parse_cmake_version(version_str):
     :rtype (int, int, int, str)
     """
     # Version number is on the first line. We can ignore anything else.
+    ver_re_str = \
+        r'^(?:cmake\s+version)?\s+([0-9]+)\.([0-9]+)\.([0-9]+)(?:\-(.*))?\s*.*$'
     if version_str and len(version_str):
-        ver_match = re.match(
-            r'^(?:cmake\s+version)?\s+([0-9]+)\.([0-9]+)\.([0-9]+)(?:\-(.*))?\s*.*$',
-            version_str)
+        ver_match = re.match(ver_re_str, version_str)
         if ver_match:
             return (int(ver_match.group(1)), int(ver_match.group(2)),
                     int(ver_match.group(3)), ver_match.group(4))

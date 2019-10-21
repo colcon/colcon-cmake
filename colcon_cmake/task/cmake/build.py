@@ -321,15 +321,14 @@ class CmakeBuildTask(TaskExtensionPoint):
             # CMake 3.15+ supports invoking `cmake --install [--config]
             # This only installs, whereas --build <dir> --target install will
             # build (again) then install.
-            call_args.extend(['--install', args.build_base])
+            call_args += ['--install', args.build_base]
         else:
             # Fallback to building the install target.
-            call_args.extend(['--build', args.build_base,
-                '--target', 'install'])
+            call_args += ['--build', args.build_base, '--target', 'install']
         # Add configuration for multi-config generators
         multi_configuration_generator = is_multi_configuration_generator(
             args.build_base, args.cmake_args)
         if multi_configuration_generator:
-            call_args.extend(['--config', self._get_configuration(args)])
+            call_args += ['--config', self._get_configuration(args)]
         return await check_call(
             self.context, call_args, cwd=args.build_base, env=env)
