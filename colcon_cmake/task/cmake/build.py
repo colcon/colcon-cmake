@@ -8,6 +8,7 @@ import re
 
 from colcon_cmake.task.cmake import CMAKE_EXECUTABLE
 from colcon_cmake.task.cmake import get_buildfile
+from colcon_cmake.task.cmake import get_cmake_version
 from colcon_cmake.task.cmake import get_generator
 from colcon_cmake.task.cmake import get_variable_from_cmake_cache
 from colcon_cmake.task.cmake import get_visual_studio_version
@@ -313,13 +314,22 @@ class CmakeBuildTask(TaskExtensionPoint):
 
         if CMAKE_EXECUTABLE is None:
             raise RuntimeError("Could not find 'cmake' executable")
-        call_args = [
-            CMAKE_EXECUTABLE, '--build', args.build_base,
-            '--target', 'install']
+
+        cmake_ver = await get_cmake_version()
+        call_args = [ CMAKE_EXECUTABLE ]
+        if cmake_ver[0] > 3 or cmake_ver[0] == 3 and cmake_ver[1] >= 15:
+            # CMake 3.15+ supports invoking `cmake --install [--config]
+            # This only installs, whereas --build <dir> --target install will
+            # build (again) then install.
+            call_args.extend([ '--install', args.build_base ])
+        else:
+            # Fallback to building the install target.
+            call_args.extend([ '--build', args.build_base,
+                '--target', 'install' ])
+        # Add configuration for multi-config generators
         multi_configuration_generator = is_multi_configuration_generator(
             args.build_base, args.cmake_args)
         if multi_configuration_generator:
-            call_args.append('--config')
-            call_args.append(self._get_configuration(args))
+            call_args.extend([ '--config', self._get_configuration(args) ])
         return await check_call(
             self.context, call_args, cwd=args.build_base, env=env)

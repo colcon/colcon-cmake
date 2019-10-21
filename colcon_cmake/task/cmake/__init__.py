@@ -2,6 +2,7 @@
 # Licensed under the Apache License, Version 2.0
 
 import os
+import re
 import shutil
 import subprocess
 
@@ -208,3 +209,53 @@ def get_visual_studio_version():
     :rtype: str
     """
     return os.environ.get('VisualStudioVersion', None)
+
+
+def _parse_cmake_version(version_str):
+    """
+    Parse the version number line from running 'cmake --version'.
+
+    The output is given as described in get_cmake_version().
+
+    :returns: The version number split as described above.
+    :rtype (int, int, int, str)
+    """
+    # Version number is on the first line. We can ignore anything else.
+    if version_str and len(version_str):
+        ver_match = re.match(
+            '^(?:cmake\s+version)?\s+([0-9]+)\.([0-9]+)\.([0-9]+)(?:\-(.*))?\s*.*$',
+            version_str)
+        if ver_match:
+            return (int(ver_match.group(1)), int(ver_match.group(2)),
+                    int(ver_match.group(3)), ver_match.group(4))
+
+    # Failed to parse the version number.
+    return (0, 0, 0, 'failed')
+
+
+async def get_cmake_version():
+    """
+    Get the version number of CMake.
+
+    The version number is parse from the output of 'cmake --version' and is
+    expected in the form 'cmake version #.#.#' where each '#' character
+    represents part of the version number. Additional text may follow, however
+    only the first line is parsed. The string may optionally end with a release
+    candidate number, typically in the form '-rc#'.
+
+    The version number is parsed into a tuple in the form
+    (major, minor, patch, release-candidate). Each element is a number value
+    except for the release-candidate part, which is a string when there is a
+    release candidate part, or None where there is no release candidate
+    specification.
+
+    Parsing of the version number may fail, in which case the version number is
+    given as (0, 0, 0, 'failed').
+
+    :returns: The version number split as described above.
+    :rtype (int, int, int, str)
+    """
+    output = await check_output([CMAKE_EXECUTABLE, '--version'])
+    lines = output.decode().splitlines()
+    ver_line = lines[0] if lines and len(lines) else None
+    return _parse_cmake_version(ver_line)
