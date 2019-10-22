@@ -312,23 +312,33 @@ class CmakeBuildTask(TaskExtensionPoint):
     async def _install(self, args, env):
         self.progress('install')
 
+        generator = get_generator(args.build_base)
         if CMAKE_EXECUTABLE is None:
             raise RuntimeError("Could not find 'cmake' executable")
 
         cmake_ver = await get_cmake_version()
-        call_args = [CMAKE_EXECUTABLE]
+        cmd = [CMAKE_EXECUTABLE]
         if cmake_ver[0] > 3 or cmake_ver[0] == 3 and cmake_ver[1] >= 15:
             # CMake 3.15+ supports invoking `cmake --install [--config]
             # This only installs, whereas --build <dir> --target install will
             # build (again) then install.
-            call_args += ['--install', args.build_base]
+            cmd += ['--install', args.build_base]
         else:
             # Fallback to building the install target.
-            call_args += ['--build', args.build_base, '--target', 'install']
-        # Add configuration for multi-config generators
+            cmd += ['--build', args.build_base, '--target', 'install']
         multi_configuration_generator = is_multi_configuration_generator(
             args.build_base, args.cmake_args)
         if multi_configuration_generator:
-            call_args += ['--config', self._get_configuration(args)]
+            cmd += ['--config', self._get_configuration(args)]
+        else:
+            # Add make/ninja arguments for the number of job threads to use.
+            job_args = self._get_make_arguments()
+            if job_args:
+                # Add arguments for the number of job threads to use
+                # Arguably, _get_make_arguments() should be be configured to
+                # return arguments based on the current generator, not just for
+                # make (and ninja by coincidence). The '--' extension may be
+                # better returned from _get_make_arguments()
+                cmd += ['--'] + job_args
         return await check_call(
-            self.context, call_args, cwd=args.build_base, env=env)
+            self.context, cmd, cwd=args.build_base, env=env)
