@@ -312,7 +312,6 @@ class CmakeBuildTask(TaskExtensionPoint):
     async def _install(self, args, env):
         self.progress('install')
 
-        generator = get_generator(args.build_base)
         if CMAKE_EXECUTABLE is None:
             raise RuntimeError("Could not find 'cmake' executable")
 
