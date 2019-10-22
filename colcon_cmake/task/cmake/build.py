@@ -9,12 +9,10 @@ import re
 from colcon_cmake.task.cmake import CMAKE_EXECUTABLE
 from colcon_cmake.task.cmake import get_buildfile
 from colcon_cmake.task.cmake import get_generator
-from colcon_cmake.task.cmake import get_project_file
 from colcon_cmake.task.cmake import get_variable_from_cmake_cache
 from colcon_cmake.task.cmake import get_visual_studio_version
 from colcon_cmake.task.cmake import has_target
 from colcon_cmake.task.cmake import is_multi_configuration_generator
-from colcon_cmake.task.cmake import MSBUILD_EXECUTABLE
 from colcon_core.environment import create_environment_scripts
 from colcon_core.logging import colcon_logger
 from colcon_core.plugin_system import satisfies_version
@@ -313,27 +311,18 @@ class CmakeBuildTask(TaskExtensionPoint):
     async def _install(self, args, env):
         self.progress('install')
 
-        generator = get_generator(args.build_base)
-        if 'Visual Studio' not in generator:
-            if CMAKE_EXECUTABLE is None:
-                raise RuntimeError("Could not find 'cmake' executable")
-            cmd = [
-                CMAKE_EXECUTABLE, '--build', args.build_base,
-                '--target', 'install']
+        if CMAKE_EXECUTABLE is None:
+            raise RuntimeError("Could not find 'cmake' executable")
+        cmd = [
+            CMAKE_EXECUTABLE, '--build', args.build_base,
+            '--target', 'install']
+        multi_configuration_generator = is_multi_configuration_generator(
+            args.build_base, args.cmake_args)
+        if multi_configuration_generator:
+            cmd += ['--config', self._get_configuration(args)]
+        else:
             job_args = self._get_make_arguments()
             if job_args:
                 cmd += ['--'] + job_args
-            return await check_call(
-                self.context, cmd, cwd=args.build_base, env=env)
-        else:
-            if MSBUILD_EXECUTABLE is None:
-                raise RuntimeError("Could not find 'msbuild' executable")
-            install_project_file = get_project_file(args.build_base, 'INSTALL')
-            return await check_call(
-                self.context,
-                [
-                    MSBUILD_EXECUTABLE,
-                    '/p:Configuration=' +
-                    self._get_configuration(args),
-                    install_project_file],
-                env=env)
+        return await check_call(
+            self.context, cmd, cwd=args.build_base, env=env)
