@@ -314,7 +314,6 @@ class CmakeBuildTask(TaskExtensionPoint):
 
         if CMAKE_EXECUTABLE is None:
             raise RuntimeError("Could not find 'cmake' executable")
-
         cmake_ver = await get_cmake_version()
         cmd = [CMAKE_EXECUTABLE]
         if cmake_ver[0] > 3 or cmake_ver[0] == 3 and cmake_ver[1] >= 15:
@@ -325,6 +324,7 @@ class CmakeBuildTask(TaskExtensionPoint):
         else:
             # Fallback to building the install target.
             cmd += ['--build', args.build_base, '--target', 'install']
+
         multi_configuration_generator = is_multi_configuration_generator(
             args.build_base, args.cmake_args)
         if multi_configuration_generator:
