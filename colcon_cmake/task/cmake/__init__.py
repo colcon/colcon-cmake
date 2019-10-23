@@ -2,6 +2,7 @@
 # Licensed under the Apache License, Version 2.0
 
 import os
+from pkg_resources import parse_version
 import re
 import shutil
 import subprocess
@@ -211,28 +212,6 @@ def get_visual_studio_version():
     return os.environ.get('VisualStudioVersion', None)
 
 
-def _parse_cmake_version(version_str):
-    """
-    Parse the version number line from running 'cmake --version'.
-
-    The output is given as described in get_cmake_version().
-
-    :returns: The version number split as described above.
-    :rtype (int, int, int, str)
-    """
-    # Version number is on the first line. We can ignore anything else.
-    ver_re_str = \
-        r'^(?:cmake\s+version)?\s+([0-9]+)\.([0-9]+)\.([0-9]+)(?:\-(\S+))?'
-    if version_str and len(version_str):
-        ver_match = re.match(ver_re_str, version_str)
-        if ver_match:
-            return (int(ver_match.group(1)), int(ver_match.group(2)),
-                    int(ver_match.group(3)), ver_match.group(4))
-
-    # Failed to parse the version number.
-    return (0, 0, 0, 'failed')
-
-
 async def get_cmake_version():
     """
     Get the version number of CMake.
@@ -240,22 +219,20 @@ async def get_cmake_version():
     The version number is parse from the output of 'cmake --version' and is
     expected in the form 'cmake version #.#.#' where each '#' character
     represents part of the version number. Additional text may follow, however
-    only the first line is parsed. The string may optionally end with a release
-    candidate number, typically in the form '-rc#'.
+    only the first line is parsed. Parsing is performed by the pkg_resources
+    package and the returned object is a Version object from that package.
 
-    The version number is parsed into a tuple in the form
-    (major, minor, patch, release-candidate). Each element is a number value
-    except for the release-candidate part, which is a string when there is a
-    release candidate part, or None where there is no release candidate
-    specification.
-
-    Parsing of the version number may fail, in which case the version number is
-    given as (0, 0, 0, 'failed').
-
-    :returns: The version number split as described above.
-    :rtype (int, int, int, str)
+    :returns: The version as parsed by the pkg_resources package
+    :rtype pkg_resources.extern.packaging.version.Version
     """
     output = await check_output([CMAKE_EXECUTABLE, '--version'])
     lines = output.decode().splitlines()
     ver_line = lines[0] if lines and len(lines) else None
-    return _parse_cmake_version(ver_line)
+    if ver_line and len(ver_line):
+        # Extract just the version part of the string.
+        ver_re_str = r'^(?:cmake\s+version)?\s*(.*)$'
+        ver_match = re.match(ver_re_str, ver_line, re.I)
+        if ver_match:
+            return parse_version(ver_match.group(1))
+    # Failed: return invalid version
+    return parse_version('0.0.0')

@@ -4,6 +4,7 @@
 import ast
 import os
 from pathlib import Path
+from pkg_resources import parse_version
 import re
 
 from colcon_cmake.task.cmake import CMAKE_EXECUTABLE
@@ -314,9 +315,9 @@ class CmakeBuildTask(TaskExtensionPoint):
 
         if CMAKE_EXECUTABLE is None:
             raise RuntimeError("Could not find 'cmake' executable")
-        cmake_ver = await get_cmake_version()
         cmd = [CMAKE_EXECUTABLE]
-        if cmake_ver[0] > 3 or cmake_ver[0] == 3 and cmake_ver[1] >= 15:
+        cmake_ver = await get_cmake_version()
+        if cmake_ver and cmake_ver >= parse_version('3.15.0'):
             # CMake 3.15+ supports invoking `cmake --install [--config]
             # This only installs, whereas --build <dir> --target install will
             # build (again) then install.
@@ -334,10 +335,6 @@ class CmakeBuildTask(TaskExtensionPoint):
             job_args = self._get_make_arguments()
             if job_args:
                 # Add arguments for the number of job threads to use
-                # Arguably, _get_make_arguments() should be be configured to
-                # return arguments based on the current generator, not just for
-                # make (and ninja by coincidence). The '--' extension may be
-                # better returned from _get_make_arguments()
                 cmd += ['--'] + job_args
         return await check_call(
             self.context, cmd, cwd=args.build_base, env=env)
