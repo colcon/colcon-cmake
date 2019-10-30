@@ -234,5 +234,5 @@ async def get_cmake_version():
         ver_match = re.match(ver_re_str, ver_line, re.I)
         if ver_match:
             return parse_version(ver_match.group(1))
-    # Failed to extract parsable version number.
+    # Failed to parse version number.
     return None
