@@ -324,6 +324,12 @@ class CmakeBuildTask(TaskExtensionPoint):
             cmd += ['--install', args.build_base]
         else:
             # Fallback to building the install target.
+            # Log an error if we are here because we failed to get a meaningful
+            # version number rather than simply using an unsupported version.
+            if not cmake_ver:
+                logger.error(
+                    'Unable to determin CMake version. Fallback to building '
+                    'the install target in place of cmake --install.')
             cmd += ['--build', args.build_base, '--target', 'install']
 
         multi_configuration_generator = is_multi_configuration_generator(

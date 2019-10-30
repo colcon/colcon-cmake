@@ -228,11 +228,11 @@ async def get_cmake_version():
     output = await check_output([CMAKE_EXECUTABLE, '--version'])
     lines = output.decode().splitlines()
     ver_line = lines[0] if lines and len(lines) else None
-    if ver_line and len(ver_line):
+    if ver_line:
         # Extract just the version part of the string.
-        ver_re_str = r'^(?:cmake\s+version)?\s*(.*)$'
+        ver_re_str = r'^(?:.*)(\d+\.\d+\..*)'
         ver_match = re.match(ver_re_str, ver_line, re.I)
         if ver_match:
             return parse_version(ver_match.group(1))
-    # Failed: return invalid version
-    return parse_version('0.0.0')
+    # Failed to extract parsable version number.
+    return None
