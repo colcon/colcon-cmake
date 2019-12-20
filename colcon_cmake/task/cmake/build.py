@@ -63,7 +63,7 @@ class CmakeBuildTask(TaskExtensionPoint):
         parser.add_argument(
             '--cmake-concat-compile-commands',
             action='store_true',
-            help='Concatenate muliple compile_commands.json into a single '
+            help='Concatenate multiple compile_commands.json into a single '
                  'file')
 
     async def build(
