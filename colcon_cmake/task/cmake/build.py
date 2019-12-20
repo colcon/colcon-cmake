@@ -2,6 +2,7 @@
 # Licensed under the Apache License, Version 2.0
 
 import ast
+import json
 import os
 from pathlib import Path
 import re
@@ -105,6 +106,9 @@ class CmakeBuildTask(TaskExtensionPoint):
             args, env, additional_targets=additional_targets)
         if rc and rc.returncode:
             return rc.returncode
+
+        if args.cmake_concat_compile_commands:
+            self._concatenate_compile_commands(args)
 
         # skip install step if a specific target was requested
         if not args.cmake_target:
@@ -331,3 +335,22 @@ class CmakeBuildTask(TaskExtensionPoint):
                 cmd += ['--'] + job_args
         return await check_call(
             self.context, cmd, cwd=args.build_base, env=env)
+
+    def _concatenate_compile_commands(self, args):
+        path = os.path.join(
+            args.build_base, 'compile_commands.json')
+        if not os.path.exists(path):
+            return
+        compile_commands = []
+        with open(path, 'r') as f:
+            compile_commands = json.load(f)
+            if len(compile_commands) == 0:
+                return
+        parent_path = os.path.join(
+            args.build_base, os.pardir, 'compile_commands.json')
+        if os.path.exists(parent_path):
+            with open(parent_path, 'r') as f:
+                compile_commands += json.load(f)
+        with open(parent_path, 'w') as f:
+            json.dump(compile_commands, f, indent=2, sort_keys=True,
+                      separators=(',', ': '))
