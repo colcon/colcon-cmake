@@ -59,6 +59,11 @@ class CmakeBuildTask(TaskExtensionPoint):
             '--cmake-force-configure',
             action='store_true',
             help='Force CMake configure step')
+        parser.add_argument(
+            '--cmake-concat-compile-commands',
+            action='store_true',
+            help='Concatenate muliple compile_commands.json into a single '
+                 'file')
 
     async def build(
         self, *, additional_hooks=None, skip_hook_creation=False,
