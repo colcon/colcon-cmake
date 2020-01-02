@@ -247,10 +247,15 @@ def _parse_cmake_version():
 
 # Global variable for the cached CMake version number.
 _cached_cmake_version = _parse_cmake_version()
+
+
 def get_cmake_version():
     """
-    Get the cached CMake version number or None if the version number is not
-    available and parsable.
+    Get the cached CMake version number if available and successfully parsed.
+
+    The result is None when a version number is not available or cannot be
+    parsed. This may occur if CMake is not present, is a very old version or is
+    a newer version where the version number string output has changed.
 
     :returns: The version as parsed by the pkg_resources package
     :rtype pkg_resources.extern.packaging.version.Version
