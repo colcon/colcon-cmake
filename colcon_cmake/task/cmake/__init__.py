@@ -245,6 +245,7 @@ def _parse_cmake_version():
     # Failed to parse version number.
     return None
 
+
 # Global variable for the cached CMake version number.
 _cached_cmake_version = _parse_cmake_version()
 
