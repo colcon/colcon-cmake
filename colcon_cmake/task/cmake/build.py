@@ -316,7 +316,7 @@ class CmakeBuildTask(TaskExtensionPoint):
         if CMAKE_EXECUTABLE is None:
             raise RuntimeError("Could not find 'cmake' executable")
         cmd = [CMAKE_EXECUTABLE]
-        cmake_ver = await get_cmake_version()
+        cmake_ver = get_cmake_version()
         if cmake_ver and cmake_ver >= parse_version('3.15.0'):
             # CMake 3.15+ supports invoking `cmake --install [--config]
             # This only installs, whereas --build <dir> --target install will
