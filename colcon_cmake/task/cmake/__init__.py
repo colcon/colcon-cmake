@@ -267,7 +267,7 @@ def get_cmake_version():
     if _cached_cmake_version is None:
         # No value yet. Parse the version number.
         _cached_cmake_version = _parse_cmake_version()
-        if not _cached_cmake_version is None:
+        if _cached_cmake_version is not None:
             # Success.
             return _cached_cmake_version
         # Failed to parse. Set _cached_cmake_version to False to prevent
