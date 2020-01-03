@@ -229,25 +229,27 @@ def _parse_cmake_version():
     :returns: The version as parsed by the pkg_resources package
     :rtype pkg_resources.extern.packaging.version.Version
     """
-    output = subprocess.run([CMAKE_EXECUTABLE, '--version'],
-                            capture_output=True)
-    if output.returncode:
-        # Failed to execute 'cmake --version'
+    try:
+        output = subprocess.check_output([CMAKE_EXECUTABLE, '--version'])
+        lines = output.decode().splitlines()
+        ver_line = lines[0] if lines and len(lines) else None
+        if ver_line:
+            # Extract just the version part of the string.
+            ver_re_str = r'^(?:.*)(\d+\.\d+\..*)'
+            ver_match = re.match(ver_re_str, ver_line, re.I)
+            if ver_match:
+                return parse_version(ver_match.group(1))
         return None
-    lines = output.stdout.decode().splitlines()
-    ver_line = lines[0] if lines and len(lines) else None
-    if ver_line:
-        # Extract just the version part of the string.
-        ver_re_str = r'^(?:.*)(\d+\.\d+\..*)'
-        ver_match = re.match(ver_re_str, ver_line, re.I)
-        if ver_match:
-            return parse_version(ver_match.group(1))
-    # Failed to parse version number.
+    except subprocess.CalledProcessError:
+        return None
     return None
 
 
 # Global variable for the cached CMake version number.
-_cached_cmake_version = _parse_cmake_version()
+# When valid, this will be of pkg_resources.extern.packaging.version.Version
+# It may also have a boolean value False when the cmake version has failed
+# to parse. This saves recurring parse failures.
+_cached_cmake_version = None
 
 
 def get_cmake_version():
@@ -261,4 +263,19 @@ def get_cmake_version():
     :returns: The version as parsed by the pkg_resources package
     :rtype pkg_resources.extern.packaging.version.Version
     """
-    return _cached_cmake_version
+    global _cached_cmake_version
+    if _cached_cmake_version is None:
+        # No value yet. Parse the version number.
+        _cached_cmake_version = _parse_cmake_version()
+        if not _cached_cmake_version is None:
+            # Success.
+            return _cached_cmake_version
+        # Failed to parse. Set _cached_cmake_version to False to prevent
+        # parsing again, but we can still return None as required.
+        _cached_cmake_version = False
+    # Have cached a previous result. Check if the previous result is a bool
+    # type. If so, this implies we've tried and failed to parse the version
+    # number and should return None. Otherwise return the cached value as is.
+    elif not isinstance(_cached_cmake_version, bool):
+        return _cached_cmake_version
+    return None
