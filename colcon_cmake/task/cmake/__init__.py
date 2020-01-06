@@ -218,13 +218,17 @@ def _parse_cmake_version():
 
     The version number is parse from the output of 'cmake --version' and is
     expected in the form 'cmake version #.#.#' where each '#' character
-    represents part of the version number. Additional text may follow, however
-    only the first line is parsed. Parsing is performed by the pkg_resources
-    package and the returned object is a Version object from that package.
+    represents part of the version number.
+
+    Additional text may follow, however only the first line is parsed.
+
+    Parsing is performed by the pkg_resources package and the returned object
+    is a Version object from that package.
 
     This function blocks on the execution of cmake and should only be used to
-    cache the CMake version number. External API users should use
-    get_cmake_version()
+    cache the CMake version number.
+
+    External API users should use get_cmake_version()
 
     :returns: The version as parsed by the pkg_resources package
     :rtype pkg_resources.extern.packaging.version.Version
@@ -232,11 +236,10 @@ def _parse_cmake_version():
     try:
         output = subprocess.check_output([CMAKE_EXECUTABLE, '--version'])
         lines = output.decode().splitlines()
-        ver_line = lines[0] if lines and len(lines) else None
-        if ver_line:
+        if lines:
             # Extract just the version part of the string.
             ver_re_str = r'^(?:.*)(\d+\.\d+\..*)'
-            ver_match = re.match(ver_re_str, ver_line, re.I)
+            ver_match = re.match(ver_re_str, lines[0], re.I)
             if ver_match:
                 return parse_version(ver_match.group(1))
         return None
@@ -246,9 +249,12 @@ def _parse_cmake_version():
 
 
 # Global variable for the cached CMake version number.
+#
 # When valid, this will be of pkg_resources.extern.packaging.version.Version
 # It may also have a boolean value False when the cmake version has failed
-# to parse. This saves recurring parse failures.
+# to parse.
+#
+# This saves recurring parse failures.
 _cached_cmake_version = None
 
 
@@ -257,8 +263,10 @@ def get_cmake_version():
     Get the cached CMake version number if available and successfully parsed.
 
     The result is None when a version number is not available or cannot be
-    parsed. This may occur if CMake is not present, is a very old version or is
-    a newer version where the version number string output has changed.
+    parsed.
+
+    This may occur if CMake is not present, is a very old version or if a newer
+    changes the output format.
 
     :returns: The version as parsed by the pkg_resources package
     :rtype pkg_resources.extern.packaging.version.Version
@@ -270,12 +278,19 @@ def get_cmake_version():
         if _cached_cmake_version is not None:
             # Success.
             return _cached_cmake_version
-        # Failed to parse. Set _cached_cmake_version to False to prevent
-        # parsing again, but we can still return None as required.
+        # Failed to parse.
+        #
+        # Set _cached_cmake_version to False to prevent parsing again, but we
+        # can still return None as required.
         _cached_cmake_version = False
-    # Have cached a previous result. Check if the previous result is a bool
-    # type. If so, this implies we've tried and failed to parse the version
-    # number and should return None. Otherwise return the cached value as is.
+    # Have cached a previous result.
+    #
+    # Check if the previous result is a bool type.
+    #
+    # If so, this implies we've tried and failed to parse the version
+    # number and should return None.
+    #
+    # Otherwise return the cached value as is.
     elif not isinstance(_cached_cmake_version, bool):
         return _cached_cmake_version
     return None

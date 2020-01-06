@@ -319,11 +319,13 @@ class CmakeBuildTask(TaskExtensionPoint):
         cmake_ver = get_cmake_version()
         if cmake_ver and cmake_ver >= parse_version('3.15.0'):
             # CMake 3.15+ supports invoking `cmake --install [--config]
+            #
             # This only installs, whereas --build <dir> --target install will
             # build (again) then install.
             cmd += ['--install', args.build_base]
         else:
             # Fallback to building the install target.
+            #
             # Log an error if we are here because we failed to get a meaningful
             # version number rather than simply using an unsupported version.
             if not cmake_ver:
