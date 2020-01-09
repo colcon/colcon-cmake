@@ -215,24 +215,22 @@ def get_visual_studio_version():
 """
 Global variable for the cached CMake version number.
 
-When valid, this will be of pkg_resources.extern.packaging.version.Version
-It may also have a boolean value False when the CMake version has failed
-to parse.
+When valid, this will be a pkg_resources.extern.packaging.version.Version.
+It may also have a boolean value False when the CMake version could not be
+determined to avoid trying to determine it again.
 """
 _cached_cmake_version = None
 
 
 def get_cmake_version():
     """
-    Get the cached CMake version number if available and successfully parsed.
+    Get the CMake version.
 
-    The result is None when a version number is not available or cannot be
-    parsed.
+    The function caches the result on the first invocation and reused that on
+    subsequent invocations.
+    The result is None when a version number could not be determined.
 
-    This may occur if CMake is not present, is a very old version or if a newer
-    changes the output format.
-
-    :returns: The version as parsed by the pkg_resources package
+    :returns: The version as reported by `CMAKE_EXECUTABLE --version`, or None
     :rtype pkg_resources.extern.packaging.version.Version
     """
     global _cached_cmake_version
@@ -262,23 +260,9 @@ def get_cmake_version():
 
 def _parse_cmake_version():
     """
-    Parse the CMake version number by running `cmake --version`.
+    Parse the CMake version printed by `CMAKE_EXECUTABLE --version`.
 
-    The version number is parse from the output of 'cmake --version' and is
-    expected in the form 'cmake version #.#.#' where each '#' character
-    represents part of the version number.
-
-    Additional text may follow, however only the first line is parsed.
-
-    Parsing is performed by the pkg_resources package and the returned object
-    is a Version object from that package.
-
-    This function blocks on the execution of cmake and should only be used to
-    cache the CMake version number.
-
-    External API users should use get_cmake_version()
-
-    :returns: The version as parsed by the pkg_resources package
+    :returns: The version parsed by pkg_resources.parse_version, or None
     :rtype pkg_resources.extern.packaging.version.Version
     """
     try:
