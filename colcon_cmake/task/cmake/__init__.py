@@ -2,13 +2,13 @@
 # Licensed under the Apache License, Version 2.0
 
 import os
-from pkg_resources import parse_version
 import re
 import shutil
 import subprocess
 
 from colcon_core.environment_variable import EnvironmentVariable
 from colcon_core.subprocess import check_output
+from pkg_resources import parse_version
 
 """Environment variable to override the CMake executable"""
 CMAKE_COMMAND_ENVIRONMENT_VARIABLE = EnvironmentVariable(
