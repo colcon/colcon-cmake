@@ -333,10 +333,8 @@ class CmakeBuildTask(TaskExtensionPoint):
         if multi_configuration_generator:
             cmd += ['--config', self._get_configuration(args)]
         else:
-            # Add make/ninja arguments for the number of job threads to use.
             job_args = self._get_make_arguments()
             if job_args:
-                # Add arguments for the number of job threads to use
                 cmd += ['--'] + job_args
         return await check_call(
             self.context, cmd, cwd=args.build_base, env=env)
