@@ -212,13 +212,13 @@ def get_visual_studio_version():
     return os.environ.get('VisualStudioVersion', None)
 
 
-# Global variable for the cached CMake version number.
-#
-# When valid, this will be of pkg_resources.extern.packaging.version.Version
-# It may also have a boolean value False when the cmake version has failed
-# to parse.
-#
-# This saves recurring parse failures.
+"""
+Global variable for the cached CMake version number.
+
+When valid, this will be of pkg_resources.extern.packaging.version.Version
+It may also have a boolean value False when the CMake version has failed
+to parse.
+"""
 _cached_cmake_version = None
 
 
