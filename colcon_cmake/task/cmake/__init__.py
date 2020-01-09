@@ -5,6 +5,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 
 from colcon_core.environment_variable import EnvironmentVariable
 from colcon_core.subprocess import check_output
@@ -266,7 +267,12 @@ def _parse_cmake_version():
     :rtype pkg_resources.extern.packaging.version.Version
     """
     try:
-        output = subprocess.check_output([CMAKE_EXECUTABLE, '--version'])
+        output = subprocess.check_output(
+            [CMAKE_EXECUTABLE, '--version'], stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+        print('Failed to determine CMake version: ' + e.output.decode(),
+              file=sys.stderr)
+    else:
         lines = output.decode().splitlines()
         if lines:
             # Extract just the version part of the string.
@@ -274,7 +280,4 @@ def _parse_cmake_version():
             ver_match = re.match(ver_re_str, lines[0], re.I)
             if ver_match:
                 return parse_version(ver_match.group(1))
-        return None
-    except subprocess.CalledProcessError:
-        return None
     return None
