@@ -236,27 +236,18 @@ def get_cmake_version():
     """
     global _cached_cmake_version
     if _cached_cmake_version is None:
-        # No value yet. Parse the version number.
-        _cached_cmake_version = _parse_cmake_version()
-        if _cached_cmake_version is not None:
-            # Success.
-            return _cached_cmake_version
-        # Failed to parse.
-        #
-        # Set _cached_cmake_version to False to prevent parsing again, but we
-        # can still return None as required.
-        _cached_cmake_version = False
-    # Have cached a previous result.
-    #
-    # Check if the previous result is a bool type.
-    #
-    # If so, this implies we've tried and failed to parse the version
-    # number and should return None.
-    #
-    # Otherwise return the cached value as is.
-    elif not isinstance(_cached_cmake_version, bool):
-        return _cached_cmake_version
-    return None
+        cmake_version = _parse_cmake_version()
+        if cmake_version is not None:
+            _cached_cmake_version = cmake_version
+        else:
+            # flag to avoid retrying on subsequent calls
+            _cached_cmake_version = False
+
+    if _cached_cmake_version is False:
+        # in case the CMake version could not be determined
+        return None
+
+    return _cached_cmake_version
 
 
 def _parse_cmake_version():
