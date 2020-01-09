@@ -212,42 +212,6 @@ def get_visual_studio_version():
     return os.environ.get('VisualStudioVersion', None)
 
 
-def _parse_cmake_version():
-    """
-    Parse the CMake version number by running `cmake --version`.
-
-    The version number is parse from the output of 'cmake --version' and is
-    expected in the form 'cmake version #.#.#' where each '#' character
-    represents part of the version number.
-
-    Additional text may follow, however only the first line is parsed.
-
-    Parsing is performed by the pkg_resources package and the returned object
-    is a Version object from that package.
-
-    This function blocks on the execution of cmake and should only be used to
-    cache the CMake version number.
-
-    External API users should use get_cmake_version()
-
-    :returns: The version as parsed by the pkg_resources package
-    :rtype pkg_resources.extern.packaging.version.Version
-    """
-    try:
-        output = subprocess.check_output([CMAKE_EXECUTABLE, '--version'])
-        lines = output.decode().splitlines()
-        if lines:
-            # Extract just the version part of the string.
-            ver_re_str = r'^(?:.*)(\d+\.\d+\..*)'
-            ver_match = re.match(ver_re_str, lines[0], re.I)
-            if ver_match:
-                return parse_version(ver_match.group(1))
-        return None
-    except subprocess.CalledProcessError:
-        return None
-    return None
-
-
 # Global variable for the cached CMake version number.
 #
 # When valid, this will be of pkg_resources.extern.packaging.version.Version
@@ -293,4 +257,40 @@ def get_cmake_version():
     # Otherwise return the cached value as is.
     elif not isinstance(_cached_cmake_version, bool):
         return _cached_cmake_version
+    return None
+
+
+def _parse_cmake_version():
+    """
+    Parse the CMake version number by running `cmake --version`.
+
+    The version number is parse from the output of 'cmake --version' and is
+    expected in the form 'cmake version #.#.#' where each '#' character
+    represents part of the version number.
+
+    Additional text may follow, however only the first line is parsed.
+
+    Parsing is performed by the pkg_resources package and the returned object
+    is a Version object from that package.
+
+    This function blocks on the execution of cmake and should only be used to
+    cache the CMake version number.
+
+    External API users should use get_cmake_version()
+
+    :returns: The version as parsed by the pkg_resources package
+    :rtype pkg_resources.extern.packaging.version.Version
+    """
+    try:
+        output = subprocess.check_output([CMAKE_EXECUTABLE, '--version'])
+        lines = output.decode().splitlines()
+        if lines:
+            # Extract just the version part of the string.
+            ver_re_str = r'^(?:.*)(\d+\.\d+\..*)'
+            ver_match = re.match(ver_re_str, lines[0], re.I)
+            if ver_match:
+                return parse_version(ver_match.group(1))
+        return None
+    except subprocess.CalledProcessError:
+        return None
     return None
