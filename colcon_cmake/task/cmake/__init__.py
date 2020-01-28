@@ -250,6 +250,26 @@ def get_cmake_version():
     return _cached_cmake_version
 
 
+def parse_cmake_version_string(version_string):
+    """
+    Parse the given CMake version string.
+
+    This is for internal use and testing.
+
+    Expects strings of the form 'cmake version 3.15.1'.
+
+    :param str version_string: The version string to parse.
+    :returns: The parsed version string or None on failure to parse.
+    :rtype pkg_resources.extern.packaging.version.Version
+    """
+    # Extract just the version part of the string.
+    ver_re_str = r'^.*(\d+\.\d+\.\d+).*'
+    ver_match = re.match(ver_re_str, version_string)
+    if ver_match:
+        return parse_version(ver_match.group(1))
+    return None
+
+
 def _parse_cmake_version():
     """
     Parse the CMake version printed by `CMAKE_EXECUTABLE --version`.
@@ -266,9 +286,6 @@ def _parse_cmake_version():
     else:
         lines = output.decode().splitlines()
         if lines:
-            # Extract just the version part of the string.
-            ver_re_str = r'^(?:.*)(\d+\.\d+\..*)'
-            ver_match = re.match(ver_re_str, lines[0], re.I)
-            if ver_match:
-                return parse_version(ver_match.group(1))
+            # Parse just the version part of the string.
+            return parse_cmake_version_string(lines[0])
     return None
