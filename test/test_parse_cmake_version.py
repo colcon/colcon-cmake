@@ -1,0 +1,43 @@
+# Copyright 2016-2018 Dirk Thomas
+# Licensed under the Apache License, Version 2.0
+
+import logging
+from pathlib import Path
+import sys
+
+from colcon_cmake.task.cmake import parse_cmake_version_string
+from pkg_resources import parse_version
+from pkg_resources.extern.packaging.version import LegacyVersion
+
+def test_parse_cmake_version():
+    # Build version prefix string closely matching what cmake --version outputs.
+    base_prefix = 'cmake version '
+
+    # Expected results list. Each element is a tuple containing the following:
+    # - Version string to parse.
+    # - Numeric version tuple to compare against (major, minor, patch).
+    # The second item is None where the parse string should not parse.
+    test_items = [
+        (base_prefix + '3.0.0', (3, 0, 0)),
+        (base_prefix + '3.0.0-dirty', (3, 0, 0)),
+        (base_prefix + '3.0.0-rc1', (3, 0, 0)),
+        (base_prefix + 'cmake version 3.0.0-rc1-dirty', (3, 0, 0)),
+        (base_prefix + 'this.is.garbage', None),
+        (base_prefix + '3.15.1', (3, 15, 1)),
+        ('not the right format', None)
+    ]
+
+    # Iterate the strings and parse.
+    for test_item in test_items:
+        parsed_version = parse_cmake_version_string(test_item[0])
+        expected_ver = test_item[1]
+        if expected_ver is None:
+            # Input string was garbage. Assert parsing failed.
+            assert parsed_version is None
+        else:
+            assert parsed_version._version.release[0] == expected_ver[0]
+            assert parsed_version._version.release[1] == expected_ver[1]
+            assert parsed_version._version.release[2] == expected_ver[2]
+
+if __name__ == "__main__":
+    test_parse_cmake_version()
