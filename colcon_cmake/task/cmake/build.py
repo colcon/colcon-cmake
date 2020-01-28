@@ -317,9 +317,12 @@ class CmakeBuildTask(TaskExtensionPoint):
             raise RuntimeError("Could not find 'cmake' executable")
         cmd = [CMAKE_EXECUTABLE]
         cmake_ver = get_cmake_version()
+        allow_job_args = True
         if cmake_ver and cmake_ver >= parse_version('3.15.0'):
             # CMake 3.15+ supports invoking `cmake --install`
             cmd += ['--install', args.build_base]
+            # Job args not compatible with --install directive
+            allow_job_args = False
         else:
             # fallback to the install target which implicitly runs a build
             if not cmake_ver:
@@ -332,7 +335,7 @@ class CmakeBuildTask(TaskExtensionPoint):
             args.build_base, args.cmake_args)
         if multi_configuration_generator:
             cmd += ['--config', self._get_configuration(args)]
-        else:
+        elif allow_job_args:
             job_args = self._get_make_arguments()
             if job_args:
                 cmd += ['--'] + job_args
