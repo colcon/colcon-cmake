@@ -1,9 +1,4 @@
-# Copyright 2016-2018 Dirk Thomas
 # Licensed under the Apache License, Version 2.0
-
-import logging
-from pathlib import Path
-import sys
 
 from colcon_cmake.task.cmake import parse_cmake_version_string
 from pkg_resources import parse_version
