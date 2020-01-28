@@ -2,7 +2,6 @@
 # Licensed under the Apache License, Version 2.0
 
 from colcon_cmake.task.cmake import parse_cmake_version_string
-from pkg_resources.extern.packaging.version import LegacyVersion
 
 
 def test_parse_cmake_version():
@@ -41,5 +40,5 @@ def test_parse_cmake_version():
             assert parsed_version._version.release[2] == expected_ver[2]
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     test_parse_cmake_version()
