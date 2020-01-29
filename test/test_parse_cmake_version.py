@@ -1,7 +1,7 @@
 # Copyright 2016-2018 Dirk Thomas
 # Licensed under the Apache License, Version 2.0
 
-from colcon_cmake.task.cmake import parse_cmake_version_string
+from colcon_cmake.task.cmake import _parse_cmake_version_string
 
 
 def test_parse_cmake_version():
@@ -28,7 +28,7 @@ def test_parse_cmake_version():
 
     # Iterate the strings and parse.
     for test_item in test_items:
-        parsed_version = parse_cmake_version_string(test_item[0])
+        parsed_version = _parse_cmake_version_string(test_item[0])
         expected_ver = test_item[1]
         # print(test_item[0], ':', parsed_version, 'expected:', expected_ver)
         if expected_ver is None:
