@@ -272,7 +272,7 @@ def _parse_cmake_version_string(version_string):
     :rtype pkg_resources.extern.packaging.version.Version
     """
     # Extract just the version part of the string.
-    ver_re_str = r'^(?:.*[ \t])?(\d+\.\d+\.\d+).*'
+    ver_re_str = r'^(?:.*\s)?(\d+\.\d+\.\d+).*'
     ver_match = re.match(ver_re_str, version_string)
     if ver_match:
         return parse_version(ver_match.group(1))

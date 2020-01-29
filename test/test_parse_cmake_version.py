@@ -27,17 +27,13 @@ def test_parse_cmake_version():
     ]
 
     # Iterate the strings and parse.
-    for test_item in test_items:
-        parsed_version = _parse_cmake_version_string(test_item[0])
-        expected_ver = test_item[1]
-        # print(test_item[0], ':', parsed_version, 'expected:', expected_ver)
-        if expected_ver is None:
+    for version_string, expected_version in test_items:
+        parsed_version = _parse_cmake_version_string(version_string)
+        if expected_version is None:
             # Input string was garbage. Assert parsing failed.
             assert parsed_version is None
         else:
-            assert parsed_version._version.release[0] == expected_ver[0]
-            assert parsed_version._version.release[1] == expected_ver[1]
-            assert parsed_version._version.release[2] == expected_ver[2]
+            assert parsed_version._version.release[0:3] == expected_version
 
 
 if __name__ == '__main__':
