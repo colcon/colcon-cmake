@@ -217,36 +217,26 @@ def get_visual_studio_version():
 Global variable for the cached CMake version number.
 
 When valid, this will be a pkg_resources.extern.packaging.version.Version.
-It may also have a boolean value False when the CMake version could not be
-determined to avoid trying to determine it again.
+It may also be None when the CMake version could not be determined to avoid
+trying to determine it again.
 """
-_cached_cmake_version = None
+_cached_cmake_version = False
 
 
 def get_cmake_version():
     """
     Get the CMake version.
 
-    The function caches the result on the first invocation and reused that on
+    The function caches the result on the first invocation and reuses that on
     subsequent invocations.
-    The result is None when a version number could not be determined.
 
     :returns: The version as reported by `CMAKE_EXECUTABLE --version`, or None
+      when the version number could not be determined
     :rtype pkg_resources.extern.packaging.version.Version
     """
     global _cached_cmake_version
-    if _cached_cmake_version is None:
-        cmake_version = _parse_cmake_version()
-        if cmake_version is not None:
-            _cached_cmake_version = cmake_version
-        else:
-            # flag to avoid retrying on subsequent calls
-            _cached_cmake_version = False
-
     if _cached_cmake_version is False:
-        # in case the CMake version could not be determined
-        return None
-
+        _cached_cmake_version = _parse_cmake_version()
     return _cached_cmake_version
 
 
