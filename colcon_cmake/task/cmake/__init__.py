@@ -2,11 +2,14 @@
 # Licensed under the Apache License, Version 2.0
 
 import os
+import re
 import shutil
 import subprocess
+import sys
 
 from colcon_core.environment_variable import EnvironmentVariable
 from colcon_core.subprocess import check_output
+from pkg_resources import parse_version
 
 """Environment variable to override the CMake executable"""
 CMAKE_COMMAND_ENVIRONMENT_VARIABLE = EnvironmentVariable(
@@ -208,3 +211,69 @@ def get_visual_studio_version():
     :rtype: str
     """
     return os.environ.get('VisualStudioVersion', None)
+
+
+"""
+Global variable for the cached CMake version number.
+
+When valid, this will be a pkg_resources.extern.packaging.version.Version.
+It may also be None when the CMake version could not be determined to avoid
+trying to determine it again.
+"""
+_cached_cmake_version = False
+
+
+def get_cmake_version():
+    """
+    Get the CMake version.
+
+    The function caches the result on the first invocation and reuses that on
+    subsequent invocations.
+
+    :returns: The version as reported by `CMAKE_EXECUTABLE --version`, or None
+      when the version number could not be determined
+    :rtype pkg_resources.extern.packaging.version.Version
+    """
+    global _cached_cmake_version
+    if _cached_cmake_version is False:
+        _cached_cmake_version = _parse_cmake_version()
+    return _cached_cmake_version
+
+
+def _parse_cmake_version():
+    """
+    Parse the CMake version printed by `CMAKE_EXECUTABLE --version`.
+
+    :returns: The version parsed by pkg_resources.parse_version, or None
+    :rtype pkg_resources.extern.packaging.version.Version
+    """
+    try:
+        output = subprocess.check_output(
+            [CMAKE_EXECUTABLE, '--version'], stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+        print('Failed to determine CMake version: ' + e.output.decode(),
+              file=sys.stderr)
+    else:
+        lines = output.decode().splitlines()
+        if lines:
+            # Parse just the version part of the string.
+            return _parse_cmake_version_string(lines[0])
+    return None
+
+
+def _parse_cmake_version_string(version_string):
+    """
+    Parse the given CMake version string.
+
+    Expects strings of the form 'cmake version 3.15.1'.
+
+    :param str version_string: The version string to parse.
+    :returns: The parsed version string or None on failure to parse.
+    :rtype pkg_resources.extern.packaging.version.Version
+    """
+    # Extract just the version part of the string.
+    ver_re_str = r'^(?:.*\s)?(\d+\.\d+\.\d+).*'
+    ver_match = re.match(ver_re_str, version_string)
+    if ver_match:
+        return parse_version(ver_match.group(1))
+    return None

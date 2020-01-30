@@ -15,6 +15,7 @@ getchildren
 github
 https
 iterdir
+kazys
 kislyuk
 libx
 lstrip
@@ -35,6 +36,7 @@ rtype
 samefile
 scspell
 setuptools
+stepanas
 thomas
 vcxproj
 xcode

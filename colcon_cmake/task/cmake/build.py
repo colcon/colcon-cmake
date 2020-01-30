@@ -4,10 +4,12 @@
 import ast
 import os
 from pathlib import Path
+from pkg_resources import parse_version
 import re
 
 from colcon_cmake.task.cmake import CMAKE_EXECUTABLE
 from colcon_cmake.task.cmake import get_buildfile
+from colcon_cmake.task.cmake import get_cmake_version
 from colcon_cmake.task.cmake import get_generator
 from colcon_cmake.task.cmake import get_variable_from_cmake_cache
 from colcon_cmake.task.cmake import get_visual_studio_version
@@ -313,14 +315,27 @@ class CmakeBuildTask(TaskExtensionPoint):
 
         if CMAKE_EXECUTABLE is None:
             raise RuntimeError("Could not find 'cmake' executable")
-        cmd = [
-            CMAKE_EXECUTABLE, '--build', args.build_base,
-            '--target', 'install']
+        cmd = [CMAKE_EXECUTABLE]
+        cmake_ver = get_cmake_version()
+        allow_job_args = True
+        if cmake_ver and cmake_ver >= parse_version('3.15.0'):
+            # CMake 3.15+ supports invoking `cmake --install`
+            cmd += ['--install', args.build_base]
+            # Job args not compatible with --install directive
+            allow_job_args = False
+        else:
+            # fallback to the install target which implicitly runs a build
+            if not cmake_ver:
+                logger.warning(
+                    'Unable to determine CMake version, building the install'
+                    "target instead of invoking 'cmake --install'")
+            cmd += ['--build', args.build_base, '--target', 'install']
+
         multi_configuration_generator = is_multi_configuration_generator(
             args.build_base, args.cmake_args)
         if multi_configuration_generator:
             cmd += ['--config', self._get_configuration(args)]
-        else:
+        elif allow_job_args:
             job_args = self._get_make_arguments()
             if job_args:
                 cmd += ['--'] + job_args
