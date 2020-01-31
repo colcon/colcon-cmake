@@ -66,14 +66,28 @@ class CmakeTestTask(TaskExtensionPoint):
 
         # CTest arguments
         ctest_args = [
-            # choose configuration, required for multi-configuration generators
-            '-C', self._get_configuration_from_cmake(args.build_base),
             # generate xml of test summary
             '-D', 'ExperimentalTest', '--no-compress-output',
             # show all test output
             '-V',
             '--force-new-ctest-process',
         ]
+
+        # Check for explicit '-C' or '--build-type' in args.ctest_args.
+        # If not, we'll add it based on the CMakeCache CMAKE_BUILD_TYPE value.
+        lookup_config = True
+        if args.ctest_args:
+            for arg in args.ctest_args:
+                if arg == '-C' or arg == '--build-config':
+                    lookup_config = False
+                    break
+
+        if lookup_config:
+            # choose configuration, required for multi-configuration generators
+            ctest_args = [
+                '-C', self._get_configuration_from_cmake(args.build_base),
+            ]
+
         ctest_args += (args.ctest_args or [])
 
         if args.retest_until_fail:
