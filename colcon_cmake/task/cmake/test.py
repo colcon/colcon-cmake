@@ -71,24 +71,15 @@ class CmakeTestTask(TaskExtensionPoint):
             # show all test output
             '-V',
             '--force-new-ctest-process',
-        ]
+        ] + (args.ctest_args or [])
 
         # Check for explicit '-C' or '--build-type' in args.ctest_args.
         # If not, we'll add it based on the CMakeCache CMAKE_BUILD_TYPE value.
-        lookup_config = True
-        if args.ctest_args:
-            for arg in args.ctest_args:
-                if arg == '-C' or arg == '--build-config':
-                    lookup_config = False
-                    break
-
-        if lookup_config:
+        if '-C' not in ctest_args and '--build-config' not in ctest_args:
             # choose configuration, required for multi-configuration generators
-            ctest_args = [
+            ctest_args[0:0] = [
                 '-C', self._get_configuration_from_cmake(args.build_base),
             ]
-
-        ctest_args += (args.ctest_args or [])
 
         if args.retest_until_fail:
             count = args.retest_until_fail + 1
