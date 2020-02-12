@@ -98,8 +98,7 @@ class CtestTestResult(TestResultExtensionPoint):
                     result.error_count += 1
 
                 if collect_details and status == 'failed':
-                    lines = []
-                    lines.append('('+child.findtext('Name')+')')
+                    lines = [child.findtext('Name')]
                     lines.extend(
                         _get_messages(
                             'failure message',
