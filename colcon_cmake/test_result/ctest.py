@@ -100,12 +100,15 @@ class CtestTestResult(TestResultExtensionPoint):
                 if collect_details and status == 'failed':
                     lines = []
                     lines.append('('+child.findtext('Name')+')')
-                    lines.extend(_get_messages('failure message',
-                        child.findtext('Results/Measurement/Value')))
-                    result.details.append( '\n'.join(lines))
+                    lines.extend(
+                        _get_messages(
+                            'failure message',
+                            child.findtext('Results/Measurement/Value')))
+                    result.details.append('\n'.join(lines))
             else:
                 results.add(result)
         return results
+
 
 def _get_messages(label, message):
     lines = []
