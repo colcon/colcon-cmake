@@ -96,6 +96,22 @@ class CtestTestResult(TestResultExtensionPoint):
                     result.skipped_count += 1
                 elif status != 'passed':
                     result.error_count += 1
+
+                if collect_details and status == 'failed':
+                    lines = []
+                    lines.append('('+child.findtext('Name')+')')
+                    lines.extend(_get_messages('failure message',
+                        child.findtext('Results/Measurement/Value')))
+                    result.details.append( '\n'.join(lines))
             else:
                 results.add(result)
         return results
+
+def _get_messages(label, message):
+    lines = []
+    if message:
+        lines.append('<<< ' + label)
+        for line in message.strip('\n\r').splitlines():
+            lines.append('  ' + line)
+        lines.append('>>>')
+    return lines
