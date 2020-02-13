@@ -10,6 +10,7 @@ ctest
 ctests
 dcmake
 etree
+findtext
 getaffinity
 getchildren
 github
