@@ -30,6 +30,10 @@ class CmakeTestTask(TaskExtensionPoint):
             help='Pass arguments to CTest projects. '
             'Arguments matching other options must be prefixed by a space,\n'
             'e.g. --ctest-args " --help"')
+        parser.add_argument(
+            '--ctest-pytest-with-coverage',
+            action='store_true',
+            help='Generate coverage information for Python tests')
 
     async def test(self, *, additional_hooks=None):  # noqa: D102
         pkg = self.context.pkg
@@ -86,6 +90,9 @@ class CmakeTestTask(TaskExtensionPoint):
             ctest_args += [
                 '--repeat-until-fail', str(count),
             ]
+
+        if args.ctest_pytest_with_coverage:
+            env['AMENT_CMAKE_TEST_PYTEST_COVERAGE_ENABLED'] = ''
 
         rerun = 0
         while True:
