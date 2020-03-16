@@ -92,7 +92,7 @@ class CmakeTestTask(TaskExtensionPoint):
             ]
 
         if args.ctest_pytest_with_coverage:
-            env['AMENT_CMAKE_TEST_PYTEST_COVERAGE_ENABLED'] = ''
+            env['AMENT_CMAKE_TEST_PYTEST_WITH_COVERAGE'] = ''
 
         rerun = 0
         while True:
