@@ -2,6 +2,7 @@
 # Licensed under the Apache License, Version 2.0
 
 import os
+from pathlib import Path
 
 from colcon_cmake.task.cmake import CTEST_EXECUTABLE
 from colcon_cmake.task.cmake import get_variable_from_cmake_cache
@@ -88,6 +89,9 @@ class CmakeTestTask(TaskExtensionPoint):
                 '--repeat-until-fail', str(count),
             ]
 
+        results_before = {p.stat() for p in Path(args.build_base).glob(
+            'Testing/*/Test.xml')}
+
         rerun = 0
         while True:
             # invoke CTest
@@ -96,8 +100,9 @@ class CmakeTestTask(TaskExtensionPoint):
                 [CTEST_EXECUTABLE] + ctest_args,
                 cwd=args.build_base, env=env)
 
-            if not completed.returncode:
-                return
+            rc = completed.returncode
+            if not rc:
+                break
 
             # try again if requested
             if args.retest_until_pass > rerun:
@@ -109,11 +114,19 @@ class CmakeTestTask(TaskExtensionPoint):
                 continue
 
             # CTest reports failing tests
-            if completed.returncode == 8:
+            if rc == 8:
                 self.context.put_event_into_queue(TestFailure(pkg.name))
                 # the return code should still be 0
-                return 0
-            return completed.returncode
+                rc = 0
+                break
+
+        results_after = {p.stat() for p in Path(args.build_base).glob(
+            'Testing/*/Test.xml')}
+
+        if results_before == results_after:
+            logger.warning('Test results were not updated after running ctest')
+
+        return rc
 
     def _get_configuration_from_cmake(self, build_base):
         # get for CMake build type from the CMake cache
