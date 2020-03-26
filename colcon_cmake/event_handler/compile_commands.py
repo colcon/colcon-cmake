@@ -10,7 +10,6 @@ from colcon_core.event_handler import EventHandlerExtensionPoint
 from colcon_core.event_reactor import EventReactorShutdown
 from colcon_core.logging import colcon_logger
 from colcon_core.plugin_system import satisfies_version
-import yaml
 
 logger = colcon_logger.getChild(__name__)
 
@@ -71,18 +70,24 @@ class CompileCommandsEventHandler(EventHandlerExtensionPoint):
                     return
 
             # collect all package-level json data
+            # for performance reasons avoid to load/dump json data
             all_compile_commands = []
             # keep deterministic order independent of aborted/selected packages
             for json_path in sorted(package_level_json_paths):
                 compile_commands = self._get_compile_commands(json_path)
-                if compile_commands is not None:
-                    all_compile_commands += compile_commands
+                if compile_commands:
+                    all_compile_commands.append(compile_commands)
 
             # generate workspace-level json file or remove if empty
             if all_compile_commands:
-                data = yaml.dump(all_compile_commands, default_flow_style=True)
-                with workspace_level_json_path.open('w') as h:
-                    h.write(data)
+                with workspace_level_json_path.open('wb') as h:
+                    h.write(b'[\n')
+                    for i, compile_commands in enumerate(all_compile_commands):
+                        h.write(compile_commands)
+                        if i != len(all_compile_commands) - 1:
+                            h.write(b',\n')
+                        h.write(b'\n')
+                    h.write(b']\n')
             elif workspace_level_json_path.exists():
                 workspace_level_json_path.unlink()
 
@@ -95,17 +100,15 @@ class CompileCommandsEventHandler(EventHandlerExtensionPoint):
         return json_paths
 
     def _get_compile_commands(self, json_path):
+        content = json_path.read_bytes()
         try:
-            compile_commands = yaml.safe_load(json_path.read_bytes())
-        except Exception as e:
-            logger.warning(
-                "Failed to parse '%s': %s" % (json_path.absolute(), e))
-            return None
-        if not isinstance(compile_commands, list):
+            open_index = content.index(b'[')
+            close_index = content.rindex(b'[')
+        except ValueError:
             logger.warning(
                 "Data in '%s' is expected to be a list" % json_path.absolute())
             return None
-        return compile_commands
+        return content[open_index + 1:close_index - 1].strip()
 
     def _get_path(self, package_name=None):
         path = Path(self.context.args.build_base)

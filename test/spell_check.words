@@ -34,6 +34,7 @@ plugin
 prepend
 pytest
 returncode
+rindex
 rtype
 samefile
 scspell
@@ -42,4 +43,3 @@ stepanas
 thomas
 vcxproj
 xcode
-yaml
