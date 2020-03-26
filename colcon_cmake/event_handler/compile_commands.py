@@ -103,7 +103,7 @@ class CompileCommandsEventHandler(EventHandlerExtensionPoint):
         content = json_path.read_bytes()
         try:
             open_index = content.index(b'[')
-            close_index = content.rindex(b'[')
+            close_index = content.rindex(b']')
         except ValueError:
             logger.warning(
                 "Data in '%s' is expected to be a list" % json_path.absolute())
