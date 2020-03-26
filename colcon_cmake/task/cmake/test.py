@@ -29,7 +29,7 @@ class CmakeTestTask(TaskExtensionPoint):
             nargs='*', metavar='*', type=str.lstrip,
             help='Pass arguments to CTest projects. '
             'Arguments matching other options must be prefixed by a space,\n'
-            'e.g. --ctest-args " --help" (stdout output might not be shown by '
+            'e.g. --ctest-args " --help" (stdout might not be shown by '
             'default, e.g. add `--event-handlers console_cohesion+`)')
 
     async def test(self, *, additional_hooks=None):  # noqa: D102

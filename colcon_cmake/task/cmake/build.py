@@ -38,7 +38,7 @@ class CmakeBuildTask(TaskExtensionPoint):
             nargs='*', metavar='*', type=str.lstrip,
             help='Pass arguments to CMake projects. '
             'Arguments matching other options must be prefixed by a space,\n'
-            'e.g. --cmake-args " --help" (stdout output might not be shown by '
+            'e.g. --cmake-args " --help" (stdout might not be shown by '
             'default, e.g. add `--event-handlers console_cohesion+`)')
         parser.add_argument(
             '--cmake-target',
