@@ -37,7 +37,7 @@ class CompileCommandsEventHandler(EventHandlerExtensionPoint):
     def __call__(self, event):  # noqa: D102
         data = event[0]
 
-        if isinstance(data, JobQueued) or isinstance(data, JobUnselected):
+        if isinstance(data, (JobQueued, JobUnselected)):
             # delay loading json for all packages
             self._package_names.add(data.identifier)
 
