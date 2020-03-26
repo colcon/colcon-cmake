@@ -25,6 +25,7 @@ makefiles
 makeflags
 modline
 msbuild
+mtime
 nargs
 noqa
 notrun
