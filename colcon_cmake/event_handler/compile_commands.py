@@ -116,6 +116,3 @@ class CompileCommandsEventHandler(EventHandlerExtensionPoint):
             path /= package_name
         path /= CompileCommandsEventHandler.FILENAME
         return path
-
-        self._file_handle = path.open(mode='w')
-        return True
