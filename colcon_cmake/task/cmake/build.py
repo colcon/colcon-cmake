@@ -84,8 +84,8 @@ class CmakeBuildTask(TaskExtensionPoint):
             environment_callback(env)
 
         rc = await self._reconfigure(args, env)
-        if rc and rc.returncode:
-            return rc.returncode
+        if rc:
+            return rc
 
         # ensure that CMake cache contains the project name
         project_name = get_variable_from_cmake_cache(
@@ -101,15 +101,15 @@ class CmakeBuildTask(TaskExtensionPoint):
 
         rc = await self._build(
             args, env, additional_targets=additional_targets)
-        if rc and rc.returncode:
-            return rc.returncode
+        if rc:
+            return rc
 
         # skip install step if a specific target was requested
         if not args.cmake_target:
             if await has_target(args.build_base, 'install'):
-                rc = await self._install(args, env)
-                if rc.returncode:
-                    return rc.returncode
+                completed = await self._install(args, env)
+                if completed.returncode:
+                    return completed.returncode
             else:
                 logger.warning(
                     "Could not run installation step for package '{pkg.name}' "
@@ -170,10 +170,11 @@ class CmakeBuildTask(TaskExtensionPoint):
         if CMAKE_EXECUTABLE is None:
             raise RuntimeError("Could not find 'cmake' executable")
         os.makedirs(args.build_base, exist_ok=True)
-        return await check_call(
+        completed = await check_call(
             self.context,
             [CMAKE_EXECUTABLE] + cmake_args,
             cwd=args.build_base, env=env)
+        return completed.returncode
 
     def _get_last_cmake_args(self, build_base):
         path = self._get_last_cmake_args_path(build_base)
@@ -236,10 +237,10 @@ class CmakeBuildTask(TaskExtensionPoint):
                 job_args = self._get_make_arguments()
                 if job_args:
                     cmd += ['--'] + job_args
-            rc = await check_call(
+            completed = await check_call(
                 self.context, cmd, cwd=args.build_base, env=env)
-            if rc and rc.returncode:
-                return rc
+            if completed.returncode:
+                return completed.returncode
 
     def _get_configuration(self, args):
         # check for CMake build type in the command line arguments
