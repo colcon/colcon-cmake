@@ -91,12 +91,12 @@ class CmakeTestTask(TaskExtensionPoint):
         rerun = 0
         while True:
             # invoke CTest
-            rc = await check_call(
+            completed = await check_call(
                 self.context,
                 [CTEST_EXECUTABLE] + ctest_args,
                 cwd=args.build_base, env=env)
 
-            if not rc.returncode:
+            if not completed.returncode:
                 return
 
             # try again if requested
@@ -109,11 +109,11 @@ class CmakeTestTask(TaskExtensionPoint):
                 continue
 
             # CTest reports failing tests
-            if rc.returncode == 8:
+            if completed.returncode == 8:
                 self.context.put_event_into_queue(TestFailure(pkg.name))
                 # the return code should still be 0
                 return 0
-            return rc.returncode
+            return completed.returncode
 
     def _get_configuration_from_cmake(self, build_base):
         # get for CMake build type from the CMake cache
