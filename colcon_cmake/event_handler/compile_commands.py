@@ -69,27 +69,26 @@ class CompileCommandsEventHandler(EventHandlerExtensionPoint):
                 else:
                     return
 
-            # collect all package-level json data
+            # read all package-level json data
+            # and combine them in the workspace-level file
             # for performance reasons avoid to load/dump json data
-            all_compile_commands = []
-            # keep deterministic order independent of aborted/selected packages
-            for json_path in sorted(package_level_json_paths):
-                compile_commands = self._get_compile_commands(json_path)
-                if compile_commands:
-                    all_compile_commands.append(compile_commands)
-
-            # generate workspace-level json file or remove if empty
-            if all_compile_commands:
-                with workspace_level_json_path.open('wb') as h:
-                    h.write(b'[\n')
-                    for i, compile_commands in enumerate(all_compile_commands):
-                        h.write(compile_commands)
-                        if i != len(all_compile_commands) - 1:
-                            h.write(b',\n')
-                        h.write(b'\n')
-                    h.write(b']\n')
-            elif workspace_level_json_path.exists():
-                workspace_level_json_path.unlink()
+            with workspace_level_json_path.open('wb') as h:
+                h.write(b'[')
+                # keep deterministic order independent of aborted/selected pkgs
+                written_compile_commands = False
+                for json_path in sorted(package_level_json_paths):
+                    compile_commands = self._get_compile_commands(json_path)
+                    if not compile_commands:
+                        continue
+                    if written_compile_commands:
+                        h.write(b',\n')
+                    else:
+                        written_compile_commands = True
+                    h.write(b'\n')
+                    h.write(compile_commands)
+                if written_compile_commands:
+                    h.write(b'\n')
+                h.write(b']\n')
 
     def _get_package_level_json_paths(self):
         json_paths = set()

@@ -30,6 +30,7 @@ nargs
 noqa
 notrun
 pathlib
+pkgs
 plugin
 prepend
 pytest
