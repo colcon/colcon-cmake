@@ -81,6 +81,7 @@ class CompileCommandsEventHandler(EventHandlerExtensionPoint):
                     if not compile_commands:
                         continue
                     if written_compile_commands:
+                        # add an empty line between packages
                         h.write(b',\n')
                     else:
                         written_compile_commands = True
