@@ -25,14 +25,17 @@ makefiles
 makeflags
 modline
 msbuild
+mtime
 nargs
 noqa
 notrun
 pathlib
+pkgs
 plugin
 prepend
 pytest
 returncode
+rindex
 rtype
 samefile
 scspell
