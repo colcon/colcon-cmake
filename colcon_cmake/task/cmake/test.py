@@ -10,7 +10,7 @@ from colcon_core.logging import colcon_logger
 from colcon_core.plugin_system import satisfies_version
 from colcon_core.shell import get_command_environment
 from colcon_core.subprocess import check_output
-from colcon_core.task import check_call
+from colcon_core.task import run
 from colcon_core.task import TaskExtensionPoint
 
 logger = colcon_logger.getChild(__name__)
@@ -91,7 +91,7 @@ class CmakeTestTask(TaskExtensionPoint):
         rerun = 0
         while True:
             # invoke CTest
-            completed = await check_call(
+            completed = await run(
                 self.context,
                 [CTEST_EXECUTABLE] + ctest_args,
                 cwd=args.build_base, env=env)

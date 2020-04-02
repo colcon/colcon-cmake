@@ -19,7 +19,7 @@ from colcon_core.environment import create_environment_scripts
 from colcon_core.logging import colcon_logger
 from colcon_core.plugin_system import satisfies_version
 from colcon_core.shell import get_command_environment
-from colcon_core.task import check_call
+from colcon_core.task import run
 from colcon_core.task import TaskExtensionPoint
 
 logger = colcon_logger.getChild(__name__)
@@ -170,7 +170,7 @@ class CmakeBuildTask(TaskExtensionPoint):
         if CMAKE_EXECUTABLE is None:
             raise RuntimeError("Could not find 'cmake' executable")
         os.makedirs(args.build_base, exist_ok=True)
-        completed = await check_call(
+        completed = await run(
             self.context,
             [CMAKE_EXECUTABLE] + cmake_args,
             cwd=args.build_base, env=env)
@@ -237,7 +237,7 @@ class CmakeBuildTask(TaskExtensionPoint):
                 job_args = self._get_make_arguments()
                 if job_args:
                     cmd += ['--'] + job_args
-            completed = await check_call(
+            completed = await run(
                 self.context, cmd, cwd=args.build_base, env=env)
             if completed.returncode:
                 return completed.returncode
@@ -341,5 +341,5 @@ class CmakeBuildTask(TaskExtensionPoint):
             job_args = self._get_make_arguments()
             if job_args:
                 cmd += ['--'] + job_args
-        return await check_call(
+        return await run(
             self.context, cmd, cwd=args.build_base, env=env)
