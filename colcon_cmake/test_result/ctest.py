@@ -59,15 +59,13 @@ class CtestTestResult(TestResultExtensionPoint):
                 continue
 
             # look for a single 'Testing' child tag
-            try:
-                [testing] = root
-            except ValueError:
+            children = list(root)
+            if len(children) != 1:
                 logger.warning(
                     "Skipping '{latest_xml_path}': 'Site' tag is expected to "
                     '"have exactly one child'.format_map(locals()))
                 continue
-
-            if testing.tag != 'Testing':
+            if children[0].tag != 'Testing':
                 logger.warning(
                     "Skipping '{latest_xml_path}': the child tag is not "
                     "'Testing'".format_map(locals()))
@@ -78,7 +76,7 @@ class CtestTestResult(TestResultExtensionPoint):
 
             # collect information from all 'Test' tags
             result = Result(str(latest_xml_path))
-            for child in testing:
+            for child in children[0]:
                 if child.tag != 'Test':
                     continue
 
