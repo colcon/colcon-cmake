@@ -59,7 +59,7 @@ class CtestTestResult(TestResultExtensionPoint):
                 continue
 
             # look for a single 'Testing' child tag
-            children = root.getchildren()
+            children = list(root)
             if len(children) != 1:
                 logger.warning(
                     "Skipping '{latest_xml_path}': 'Site' tag is expected to "

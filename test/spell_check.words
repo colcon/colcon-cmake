@@ -12,7 +12,6 @@ dcmake
 etree
 findtext
 getaffinity
-getchildren
 github
 https
 iterdir
