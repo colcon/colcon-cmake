@@ -174,6 +174,12 @@ class CmakeBuildTask(TaskExtensionPoint):
             self.context,
             [CMAKE_EXECUTABLE] + cmake_args,
             cwd=args.build_base, env=env)
+        # in the case CMake fails with an error code make sure to delete the
+        # buildfile if it exists to avoid not running reconfigure next time
+        if completed.returncode:
+            buildfile = get_buildfile(cmake_cache)
+            if buildfile.exists():
+                buildfile.unlink()
         return completed.returncode
 
     def _get_last_cmake_args(self, build_base):
