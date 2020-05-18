@@ -78,7 +78,7 @@ async def get_makefile_targets(path):
         CMAKE_EXECUTABLE, '--build', path, '--target', 'help'], cwd=path)
     lines = output.decode().splitlines()
     prefix = '... '
-    return [l[len(prefix):] for l in lines if l.startswith(prefix)]
+    return [line[len(prefix):] for line in lines if line.startswith(prefix)]
 
 
 def get_ninja_targets(path):
@@ -94,9 +94,9 @@ def get_ninja_targets(path):
     lines = output.decode().splitlines()
     suffix = ':'
     return [
-        l.split(' ')[0][:-len(suffix)]
-        for l in lines
-        if len(l.split(' ')) == 2 and l.split(' ')[0].endswith(suffix)]
+        line.split(' ')[0][:-len(suffix)]
+        for line in lines
+        if len(line.split(' ')) == 2 and line.split(' ')[0].endswith(suffix)]
 
 
 def get_buildfile(cmake_cache):
