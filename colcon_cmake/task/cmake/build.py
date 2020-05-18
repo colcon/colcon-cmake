@@ -4,7 +4,6 @@
 import ast
 import os
 from pathlib import Path
-from pkg_resources import parse_version
 import re
 
 from colcon_cmake.task.cmake import CMAKE_EXECUTABLE
@@ -21,6 +20,7 @@ from colcon_core.plugin_system import satisfies_version
 from colcon_core.shell import get_command_environment
 from colcon_core.task import run
 from colcon_core.task import TaskExtensionPoint
+from pkg_resources import parse_version
 
 logger = colcon_logger.getChild(__name__)
 
