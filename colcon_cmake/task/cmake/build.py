@@ -18,6 +18,7 @@ from colcon_core.environment import create_environment_scripts
 from colcon_core.logging import colcon_logger
 from colcon_core.plugin_system import satisfies_version
 from colcon_core.shell import get_command_environment
+from colcon_core.task import collect_existing_environment_hooks
 from colcon_core.task import run
 from colcon_core.task import TaskExtensionPoint
 from pkg_resources import parse_version
@@ -116,6 +117,13 @@ class CmakeBuildTask(TaskExtensionPoint):
                     "because it has no 'install' target".format_map(locals()))
 
         if not skip_hook_creation:
+            # register additional custom hooks
+            additional_hooks = list(additional_hooks or [])
+            custom_hooks_path = Path(args.install_base) / \
+                'share' / pkg.name / 'env_hook'
+            additional_hooks += collect_existing_environment_hooks(
+                custom_hooks_path)
+
             create_environment_scripts(
                 pkg, args, additional_hooks=additional_hooks)
 
