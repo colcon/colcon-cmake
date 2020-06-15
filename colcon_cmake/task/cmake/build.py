@@ -2,6 +2,7 @@
 # Licensed under the Apache License, Version 2.0
 
 import ast
+from contextlib import suppress
 import os
 from pathlib import Path
 import re
@@ -305,11 +306,9 @@ class CmakeBuildTask(TaskExtensionPoint):
             return []
         # Use the number of CPU cores
         jobs = os.cpu_count()
-        try:
+        with suppress(AttributeError):
             # consider restricted set of CPUs if applicable
             jobs = min(jobs, len(os.sched_getaffinity(0)))
-        except AttributeError:
-            pass
         if jobs is None:
             # the number of cores can't be determined
             return []
