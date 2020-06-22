@@ -130,6 +130,8 @@ def get_generator(path, cmake_args=None):
     for i, cmake_arg in enumerate(cmake_args or []):
         if cmake_arg == '-G' and i < len(cmake_args) - 1:
             generator = cmake_args[i + 1]
+        if cmake_arg.startswith('-G') and len(cmake_arg) > 2:
+            generator = cmake_arg[2:]
     if generator is None:
         # get the generator from the CMake cache
         generator = get_variable_from_cmake_cache(
