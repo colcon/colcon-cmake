@@ -4,6 +4,9 @@
 import os
 from pathlib import Path
 
+from colcon_cmake.task.cmake import CMAKE_EXECUTABLE
+
+from colcon_core.event.command import Command
 from colcon_core.event.job import JobQueued
 from colcon_core.event.job import JobUnselected
 from colcon_core.event_handler import EventHandlerExtensionPoint
@@ -33,6 +36,7 @@ class CompileCommandsEventHandler(EventHandlerExtensionPoint):
         satisfies_version(
             EventHandlerExtensionPoint.EXTENSION_POINT_VERSION, '^1.0')
         self._package_names = set()
+        self._any_cmake_commands = False
 
     def __call__(self, event):  # noqa: D102
         data = event[0]
@@ -41,7 +45,16 @@ class CompileCommandsEventHandler(EventHandlerExtensionPoint):
             # delay loading json for all packages
             self._package_names.add(data.identifier)
 
+        elif isinstance(data, Command):
+            if data.cmd[0] == CMAKE_EXECUTABLE:
+                self._any_cmake_commands = True
+
         elif isinstance(data, EventReactorShutdown):
+            # if CMake was never invoked there is no need (re-)generate a
+            # workspace-level json file
+            if not self._any_cmake_commands:
+                return
+
             # if no package has a json file there is no need for a
             # workspace-level json file
             package_level_json_paths = self._get_package_level_json_paths()
