@@ -2,6 +2,9 @@
 # Licensed under the Apache License, Version 2.0
 
 import os
+import shutil
+from contextlib import suppress
+from pathlib import Path
 
 from colcon_cmake.task.cmake import CTEST_EXECUTABLE
 from colcon_cmake.task.cmake import get_variable_from_cmake_cache
@@ -88,6 +91,11 @@ class CmakeTestTask(TaskExtensionPoint):
                 '--repeat-until-fail', str(count),
             ]
 
+        # delete an existing Testing/TAG file to ensure a new tag name is used
+        tag_file = Path(args.build_base) / 'Testing' / 'TAG'
+        with suppress(FileNotFoundError):
+            tag_file.unlink()
+
         rerun = 0
         while True:
             # invoke CTest
@@ -97,7 +105,7 @@ class CmakeTestTask(TaskExtensionPoint):
                 cwd=args.build_base, env=env)
 
             if not completed.returncode:
-                return
+                break
 
             # try again if requested
             if args.retest_until_pass > rerun:
@@ -112,8 +120,27 @@ class CmakeTestTask(TaskExtensionPoint):
             if completed.returncode == 8:
                 self.context.put_event_into_queue(TestFailure(pkg.name))
                 # the return code should still be 0
-                return 0
+                break
             return completed.returncode
+
+        # copy Testing/TAG and Testing/<tagname>/Test.xml to custom location
+        if args.test_result_base and args.test_result_base != args.build_base:
+            if not tag_file.is_file():
+                return
+
+            # find the latest Test.xml file
+            latest_xml_dir = tag_file.read_text().splitlines()[0]
+            latest_xml_path = tag_file.parent / latest_xml_dir / 'Test.xml'
+            if not latest_xml_path.exists():
+                logger.warning(
+                    "Skipping '{tag_file}': could not find latest XML file "
+                    "'{latest_xml_path}'".format_map(locals()))
+                return
+
+            dst = Path(args.test_result_base) / 'Testing' / latest_xml_dir
+            dst.mkdir(parents=True, exist_ok=True)
+            _symlink_or_copy(tag_file, str(dst.parent / tag_file.name))
+            _symlink_or_copy(latest_xml_path, str(dst / latest_xml_path.name))
 
     def _get_configuration_from_cmake(self, build_base):
         # get for CMake build type from the CMake cache
@@ -122,3 +149,23 @@ class CmakeTestTask(TaskExtensionPoint):
         if build_type in ('Debug', 'MinSizeRel', 'RelWithDebInfo'):
             return build_type
         return 'Release'
+
+
+def _symlink_or_copy(src, dst):
+    print(' ', src, '->', dst)
+    src = os.path.realpath(str(src))
+    dst = os.path.realpath(str(dst))
+
+    if os.path.islink(dst):
+        if not os.path.exists(dst) or not os.path.samefile(src, dst):
+            os.unlink(dst)
+    elif os.path.isfile(dst):
+        os.remove(dst)
+    elif os.path.isdir(dst):
+        shutil.rmtree(dst)
+    if not os.path.exists(dst):
+        try:
+            # Administrator privileges are required on Windows
+            os.symlink(src, dst)
+        except (FileNotFoundError, OSError):
+            shutil.copy2(src, dst)

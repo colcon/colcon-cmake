@@ -36,11 +36,14 @@ prepend
 pytest
 returncode
 rindex
+rmtree
 rtype
 samefile
 scspell
 setuptools
 stepanas
+symlink
+tagname
 thomas
 vcxproj
 xcode
