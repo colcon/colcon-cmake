@@ -139,8 +139,8 @@ class CmakeTestTask(TaskExtensionPoint):
 
             dst = Path(args.test_result_base) / 'Testing' / latest_xml_dir
             dst.mkdir(parents=True, exist_ok=True)
-            _symlink_or_copy(tag_file, str(dst.parent / tag_file.name))
-            _symlink_or_copy(latest_xml_path, str(dst / latest_xml_path.name))
+            _copy_file(tag_file, str(dst.parent / tag_file.name))
+            _copy_file(latest_xml_path, str(dst / latest_xml_path.name))
 
     def _get_configuration_from_cmake(self, build_base):
         # get for CMake build type from the CMake cache
@@ -151,21 +151,9 @@ class CmakeTestTask(TaskExtensionPoint):
         return 'Release'
 
 
-def _symlink_or_copy(src, dst):
-    print(' ', src, '->', dst)
-    src = os.path.realpath(str(src))
-    dst = os.path.realpath(str(dst))
-
+def _copy_file(src, dst):
     if os.path.islink(dst):
-        if not os.path.exists(dst) or not os.path.samefile(src, dst):
-            os.unlink(dst)
-    elif os.path.isfile(dst):
-        os.remove(dst)
+        os.unlink(dst)
     elif os.path.isdir(dst):
         shutil.rmtree(dst)
-    if not os.path.exists(dst):
-        try:
-            # Administrator privileges are required on Windows
-            os.symlink(src, dst)
-        except (FileNotFoundError, OSError):
-            shutil.copy2(src, dst)
+    shutil.copy2(src, dst)
