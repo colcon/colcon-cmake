@@ -77,14 +77,6 @@ class CmakeTestTask(TaskExtensionPoint):
             '--force-new-ctest-process',
         ] + (args.ctest_args or [])
 
-        # Check for explicit '-C' or '--build-type' in args.ctest_args.
-        # If not, we'll add it based on the CMakeCache CMAKE_BUILD_TYPE value.
-        if '-C' not in ctest_args and '--build-config' not in ctest_args:
-            # choose configuration, required for multi-configuration generators
-            ctest_args[0:0] = [
-                '-C', self._get_configuration_from_cmake(args.build_base),
-            ]
-
         if args.retest_until_fail:
             count = args.retest_until_fail + 1
             ctest_args += [
@@ -141,14 +133,6 @@ class CmakeTestTask(TaskExtensionPoint):
             dst.mkdir(parents=True, exist_ok=True)
             _copy_file(tag_file, str(dst.parent / tag_file.name))
             _copy_file(latest_xml_path, str(dst / latest_xml_path.name))
-
-    def _get_configuration_from_cmake(self, build_base):
-        # get for CMake build type from the CMake cache
-        build_type = get_variable_from_cmake_cache(
-            build_base, 'CMAKE_BUILD_TYPE')
-        if build_type in ('Debug', 'MinSizeRel', 'RelWithDebInfo'):
-            return build_type
-        return 'Release'
 
 
 def _copy_file(src, dst):
