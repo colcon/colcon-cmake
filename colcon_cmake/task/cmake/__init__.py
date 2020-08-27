@@ -214,7 +214,8 @@ def get_msbuild_version():
     """
     cp = subprocess.run(
         ['msbuild', '-version', '-noLogo'],
-        capture_output=True
+        capture_output=True,
+        encoding=sys.getdefaultencoding(),
     )
     return cp.stdout
 
