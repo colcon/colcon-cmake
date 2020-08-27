@@ -206,6 +206,19 @@ def get_project_file(path, target):
     return project_file
 
 
+def get_msbuild_version():
+    """
+    Get the version of msbuild or throw an exception.
+
+    :rtype: str
+    """
+    cp = subprocess.run(
+        ['msbuild', '-version', '-noLogo'],
+        capture_output=True
+    )
+    return cp.stdout
+
+
 def get_visual_studio_version():
     """
     Get the Visual Studio version.

@@ -11,8 +11,8 @@ from colcon_cmake.task.cmake import CMAKE_EXECUTABLE
 from colcon_cmake.task.cmake import get_buildfile
 from colcon_cmake.task.cmake import get_cmake_version
 from colcon_cmake.task.cmake import get_generator
+from colcon_cmake.task.cmake import get_msbuild_version
 from colcon_cmake.task.cmake import get_variable_from_cmake_cache
-from colcon_cmake.task.cmake import get_visual_studio_version
 from colcon_cmake.task.cmake import has_target
 from colcon_cmake.task.cmake import is_multi_configuration_generator
 from colcon_core.environment import create_environment_scripts
@@ -148,25 +148,22 @@ class CmakeBuildTask(TaskExtensionPoint):
         cmake_args += ['-DCMAKE_INSTALL_PREFIX=' + args.install_base]
         generator = get_generator(args.build_base, args.cmake_args)
         if os.name == 'nt' and generator is None:
-            vsv = get_visual_studio_version()
-            if vsv is None:
+            try:
+                msbuild_version = get_msbuild_version()
+            except FileNotFoundError as e:
                 raise RuntimeError(
-                    'VisualStudioVersion is not set, '
-                    'please run within a Visual Studio Command Prompt.')
-            supported_vsv = {
-                '16.0': 'Visual Studio 16 2019',
-                '15.0': 'Visual Studio 15 2017',
-                '14.0': 'Visual Studio 14 2015',
-            }
-            if vsv not in supported_vsv:
+                    'msbuild is not found, '
+                    'please run within a Visual Studio Command Prompt.') from e
+            major_version = msbuild_version.split('.')[0]
+            if major_version not in ('14', '15', '16'):
                 raise RuntimeError(
-                    "Unknown / unsupported VS version '{vsv}'"
+                    "Unknown / unsupported VS version '{msbuild_version}'"
                     .format_map(locals()))
-            cmake_args += ['-G', supported_vsv[vsv]]
+            cmake_args += ['-G', 'Visual Studio ' + major_version]
             # choose 'x64' on VS 14 and 15 if not specified explicitly
             # since otherwise 'Win32' is the default for those
             # newer versions default to the host architecture
-            if '-A' not in cmake_args and vsv in ('14.0', '15.0'):
+            if '-A' not in cmake_args and major_version in ('14', '15'):
                 cmake_args += ['-A', 'x64']
         if CMAKE_EXECUTABLE is None:
             raise RuntimeError("Could not find 'cmake' executable")
