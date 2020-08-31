@@ -1,10 +1,10 @@
 # Copyright 2016-2018 Dirk Thomas
 # Licensed under the Apache License, Version 2.0
 
-from contextlib import suppress
 import os
-from pathlib import Path
 import shutil
+from contextlib import suppress
+from pathlib import Path
 
 from colcon_cmake.task.cmake import CTEST_EXECUTABLE
 from colcon_cmake.task.cmake import get_variable_from_cmake_cache
