@@ -6,6 +6,7 @@ import re
 import shutil
 import subprocess
 import sys
+import functools
 
 from colcon_core.environment_variable import EnvironmentVariable
 from colcon_core.subprocess import check_output
@@ -206,6 +207,7 @@ def get_project_file(path, target):
     return project_file
 
 
+@functools.lru_cache(maxsize=1)
 def get_msbuild_version():
     """
     Get the version of msbuild or throw an exception.
