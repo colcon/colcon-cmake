@@ -12,6 +12,7 @@ ctests
 dcmake
 etree
 findtext
+functools
 getaffinity
 github
 https
@@ -23,6 +24,7 @@ lstrip
 makefile
 makefiles
 makeflags
+maxsize
 modline
 msbuild
 mtime
