@@ -214,10 +214,9 @@ def get_msbuild_version():
     """
     cp = subprocess.run(
         ['msbuild', '-version', '-noLogo'],
-        capture_output=True,
-        encoding=sys.getdefaultencoding(),
+        capture_output=True
     )
-    return cp.stdout
+    return cp.stdout.decode(encoding=sys.getdefaultencoding())
 
 
 def get_visual_studio_version():
