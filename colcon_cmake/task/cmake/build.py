@@ -154,16 +154,16 @@ class CmakeBuildTask(TaskExtensionPoint):
                 raise RuntimeError(
                     'msbuild is not found, '
                     'please run within a Visual Studio Command Prompt.') from e
-            major_version = msbuild_version.split('.')[0]
-            if major_version not in ('14', '15', '16'):
+            major_version = int(msbuild_version.split('.')[0])
+            if major_version < 14:
                 raise RuntimeError(
                     "Unknown / unsupported VS version '{msbuild_version}'"
                     .format_map(locals()))
-            cmake_args += ['-G', 'Visual Studio ' + major_version]
+            cmake_args += ['-G', 'Visual Studio ' + str(major_version)]
             # choose 'x64' on VS 14 and 15 if not specified explicitly
             # since otherwise 'Win32' is the default for those
             # newer versions default to the host architecture
-            if '-A' not in cmake_args and major_version in ('14', '15'):
+            if '-A' not in cmake_args and major_version < 16:
                 cmake_args += ['-A', 'x64']
         if CMAKE_EXECUTABLE is None:
             raise RuntimeError("Could not find 'cmake' executable")

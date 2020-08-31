@@ -214,11 +214,11 @@ def get_msbuild_version():
 
     :rtype: str
     """
-    cp = subprocess.run(
+    completed_process = subprocess.run(
         ['msbuild', '-version', '-noLogo'],
         capture_output=True
     )
-    return cp.stdout.decode(encoding=sys.getdefaultencoding())
+    return completed_process.stdout.decode(encoding=sys.getdefaultencoding())
 
 
 def get_visual_studio_version():
