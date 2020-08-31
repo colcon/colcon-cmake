@@ -162,7 +162,8 @@ class CmakeBuildTask(TaskExtensionPoint):
                     .format_map(locals())) from e
             if major_version < 14:
                 raise RuntimeError(
-                    "Unsupported msbuild version '{msbuild_version}'".format_map(locals()))
+                    "Unsupported msbuild version '{msbuild_version}'"
+                    .format_map(locals()))
             cmake_args += ['-G', 'Visual Studio ' + str(major_version)]
             # choose 'x64' on VS 14 and 15 if not specified explicitly
             # since otherwise 'Win32' is the default for those
