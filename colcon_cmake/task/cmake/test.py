@@ -139,8 +139,8 @@ class CmakeTestTask(TaskExtensionPoint):
 
             dst = Path(args.test_result_base) / 'Testing' / latest_xml_dir
             dst.mkdir(parents=True, exist_ok=True)
-            _copy_file(tag_file, str(dst.parent / tag_file.name))
-            _copy_file(latest_xml_path, str(dst / latest_xml_path.name))
+            _copy_file(str(tag_file), str(dst.parent / tag_file.name))
+            _copy_file(str(latest_xml_path), str(dst / latest_xml_path.name))
 
     def _get_configuration_from_cmake(self, build_base):
         # get for CMake build type from the CMake cache
