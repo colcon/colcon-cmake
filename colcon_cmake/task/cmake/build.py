@@ -241,7 +241,7 @@ class CmakeBuildTask(TaskExtensionPoint):
             if multi_configuration_generator:
                 cmd += ['--config', self._get_configuration(args)]
             else:
-                job_args = self._get_make_arguments()
+                job_args = self._get_make_arguments(env)
                 if job_args:
                     cmd += ['--'] + job_args
             completed = await run(
@@ -281,17 +281,18 @@ class CmakeBuildTask(TaskExtensionPoint):
             env['CL'] = ' '.join(cl_split)
         return env
 
-    def _get_make_arguments(self):
+    def _get_make_arguments(self, env):
         """
         Get the make arguments to limit the number of simultaneously run jobs.
 
         The arguments are chosen based on the `cpu_count`, e.g. -j4 -l4.
 
+        :param env: a dictionary with environment variables
         :returns: list of make arguments
         :rtype: list of strings
         """
         # check MAKEFLAGS for -j/--jobs/-l/--load-average arguments
-        makeflags = os.environ.get('MAKEFLAGS', '')
+        makeflags = env.get('MAKEFLAGS', '')
         regex = (
             r'(?:^|\s)'
             r'(-?(?:j|l)(?:\s*[0-9]+|\s|$))'
@@ -343,7 +344,7 @@ class CmakeBuildTask(TaskExtensionPoint):
         if multi_configuration_generator:
             cmd += ['--config', self._get_configuration(args)]
         elif allow_job_args:
-            job_args = self._get_make_arguments()
+            job_args = self._get_make_arguments(env)
             if job_args:
                 cmd += ['--'] + job_args
         return await run(
