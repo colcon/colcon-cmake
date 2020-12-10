@@ -287,7 +287,7 @@ class CmakeBuildTask(TaskExtensionPoint):
 
         The arguments are chosen based on the `cpu_count`, e.g. -j4 -l4.
 
-        :param env: a dictionary with environment variables
+        :param dict env: a dictionary with environment variables
         :returns: list of make arguments
         :rtype: list of strings
         """
