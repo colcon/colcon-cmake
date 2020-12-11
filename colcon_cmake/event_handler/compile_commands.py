@@ -5,7 +5,6 @@ import os
 from pathlib import Path
 
 from colcon_cmake.task.cmake import CMAKE_EXECUTABLE
-
 from colcon_core.event.command import Command
 from colcon_core.event.job import JobQueued
 from colcon_core.event.job import JobUnselected
