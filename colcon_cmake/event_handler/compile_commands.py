@@ -68,13 +68,13 @@ class CompileCommandsEventHandler(EventHandlerExtensionPoint):
             try:
                 workspace_level_mtime = os.path.getmtime(
                     str(workspace_level_json_path))
-            except Exception:
+            except OSError:
                 pass
             else:
                 for json_path in sorted(package_level_json_paths):
                     try:
                         mtime = os.path.getmtime(str(json_path))
-                    except Exception:
+                    except OSError:
                         continue
                     if mtime > workspace_level_mtime:
                         break
