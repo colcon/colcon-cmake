@@ -52,6 +52,8 @@ class CmakeTestTask(TaskExtensionPoint):
             logger.error(str(e))
             return 1
 
+        env.pop('DESTDIR', None)
+
         if CTEST_EXECUTABLE is None:
             raise RuntimeError("Could not find 'ctest' executable")
 
