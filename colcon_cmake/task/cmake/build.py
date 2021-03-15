@@ -84,6 +84,8 @@ class CmakeBuildTask(TaskExtensionPoint):
         if environment_callback is not None:
             environment_callback(env)
 
+        env.pop('DESTDIR', None)
+
         rc = await self._reconfigure(args, env)
         if rc:
             return rc
