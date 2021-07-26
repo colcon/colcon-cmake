@@ -301,7 +301,7 @@ class CmakeBuildTask(TaskExtensionPoint):
         :rtype: list of strings
         """
         generator = get_generator(args.build_base)
-        if "Makefiles" in generator and args.cmake_jobs is None:
+        if 'Makefiles' in generator and args.cmake_jobs is None:
             # check MAKEFLAGS for -j/--jobs/-l/--load-average arguments
             # Note: Ninja does not support environment variables.
             makeflags = env.get('MAKEFLAGS', '')
