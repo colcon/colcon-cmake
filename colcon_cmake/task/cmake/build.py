@@ -14,6 +14,7 @@ from colcon_cmake.task.cmake import get_generator
 from colcon_cmake.task.cmake import get_variable_from_cmake_cache
 from colcon_cmake.task.cmake import get_visual_studio_version
 from colcon_cmake.task.cmake import has_target
+from colcon_cmake.task.cmake import is_jobs_base_generator
 from colcon_cmake.task.cmake import is_multi_configuration_generator
 from colcon_core.environment import create_environment_scripts
 from colcon_core.logging import colcon_logger
@@ -63,6 +64,12 @@ class CmakeBuildTask(TaskExtensionPoint):
             '--cmake-force-configure',
             action='store_true',
             help='Force CMake configure step')
+        parser.add_argument(
+            '--cmake-jobs',
+            type=int,
+            help='Number of jobs to use for supported generators (e.g., Ninja '
+            'Makefiles). Negative values subtract from the maximum '
+            'available, so --jobs=-1 uses all bar 1 available threads.')
 
     async def build(  # noqa: D102
         self, *, additional_hooks=None, skip_hook_creation=False,
@@ -221,6 +228,8 @@ class CmakeBuildTask(TaskExtensionPoint):
             if additional_targets:
                 targets += additional_targets
 
+        jobs_base_generator = is_jobs_base_generator(
+            args.build_base, args.cmake_args)
         multi_configuration_generator = is_multi_configuration_generator(
             args.build_base, args.cmake_args)
         if multi_configuration_generator:
@@ -240,8 +249,8 @@ class CmakeBuildTask(TaskExtensionPoint):
                 cmd += ['--clean-first']
             if multi_configuration_generator:
                 cmd += ['--config', self._get_configuration(args)]
-            else:
-                job_args = self._get_make_arguments(env)
+            if jobs_base_generator:
+                job_args = self._get_make_jobs_arguments(args, env)
                 if job_args:
                     cmd += ['--'] + job_args
             completed = await run(
@@ -281,7 +290,7 @@ class CmakeBuildTask(TaskExtensionPoint):
             env['CL'] = ' '.join(cl_split)
         return env
 
-    def _get_make_arguments(self, env):
+    def _get_make_jobs_arguments(self, args, env):
         """
         Get the make arguments to limit the number of simultaneously run jobs.
 
@@ -291,28 +300,37 @@ class CmakeBuildTask(TaskExtensionPoint):
         :returns: list of make arguments
         :rtype: list of strings
         """
-        # check MAKEFLAGS for -j/--jobs/-l/--load-average arguments
-        makeflags = env.get('MAKEFLAGS', '')
-        regex = (
-            r'(?:^|\s)'
-            r'(-?(?:j|l)(?:\s*[0-9]+|\s|$))'
-            r'|'
-            r'(?:^|\s)'
-            r'((?:--)?(?:jobs|load-average)(?:(?:=|\s+)[0-9]+|(?:\s|$)))'
-        )
-        matches = re.findall(regex, makeflags) or []
-        matches = [m[0] or m[1] for m in matches]
-        if matches:
-            # do not extend make arguments, let MAKEFLAGS set things
-            return []
-        # Use the number of CPU cores
-        jobs = os.cpu_count()
-        with suppress(AttributeError):
-            # consider restricted set of CPUs if applicable
-            jobs = min(jobs, len(os.sched_getaffinity(0)))
-        if jobs is None:
-            # the number of cores can't be determined
-            return []
+        generator = get_generator(args.build_base)
+        if "Makefiles" in generator and args.cmake_jobs is None:
+            # check MAKEFLAGS for -j/--jobs/-l/--load-average arguments
+            # Note: Ninja does not support environment variables.
+            makeflags = env.get('MAKEFLAGS', '')
+            regex = (
+                r'(?:^|\s)'
+                r'(-?(?:j|l)(?:\s*[0-9]+|\s|$))'
+                r'|'
+                r'(?:^|\s)'
+                r'((?:--)?(?:jobs|load-average)(?:(?:=|\s+)[0-9]+|(?:\s|$)))'
+            )
+            matches = re.findall(regex, makeflags) or []
+            matches = [m[0] or m[1] for m in matches]
+            if matches:
+                # do not extend make arguments, let MAKEFLAGS set things
+                return []
+        # Use command line specified jobs if positive.
+        jobs_args = args.cmake_jobs if args.cmake_jobs is not None else 0
+        jobs = 0
+        if jobs_args <= 0:
+            # Base off the number of CPU cores if jobs arg non-positive.
+            jobs = os.cpu_count()
+            with suppress(AttributeError):
+                # consider restricted set of CPUs if applicable
+                jobs = min(jobs, len(os.sched_getaffinity(0)))
+            if jobs is None:
+                # the number of cores can't be determined
+                return []
+            # Finalise jobs as as CPU count deducting the limit specified.
+            jobs = max(jobs + jobs_args, 1)
         return [
             '-j{jobs}'.format_map(locals()),
             '-l{jobs}'.format_map(locals()),
@@ -325,7 +343,8 @@ class CmakeBuildTask(TaskExtensionPoint):
             raise RuntimeError("Could not find 'cmake' executable")
         cmd = [CMAKE_EXECUTABLE]
         cmake_ver = get_cmake_version()
-        allow_job_args = True
+        allow_job_args = is_jobs_base_generator(
+            args.build_base, args.cmake_args)
         if cmake_ver and cmake_ver >= parse_version('3.15.0'):
             # CMake 3.15+ supports invoking `cmake --install`
             cmd += ['--install', args.build_base]
@@ -343,8 +362,8 @@ class CmakeBuildTask(TaskExtensionPoint):
             args.build_base, args.cmake_args)
         if multi_configuration_generator:
             cmd += ['--config', self._get_configuration(args)]
-        elif allow_job_args:
-            job_args = self._get_make_arguments(env)
+        if allow_job_args:
+            job_args = self._get_make_jobs_arguments(args, env)
             if job_args:
                 cmd += ['--'] + job_args
         return await run(

@@ -139,6 +139,27 @@ def get_generator(path, cmake_args=None):
     return generator
 
 
+def is_jobs_base_generator(path, cmake_args=None):
+    """
+    Check if the used CMake generator supports jobs base arguments (-jN).
+
+    :param str path: The path of the directory contain the CMake cache file
+    :param list cmake_args: The CMake command line arguments
+    :rtype: bool
+    """
+    known_jobs_base_multi_configuration_generators = (
+        'Ninja Multi-Config',
+    )
+    if not is_multi_configuration_generator(path, cmake_args):
+        # Historically we assume any non-multi-config generator is jobs based.
+        return True
+    generator = get_generator(path, cmake_args)
+    for multi in known_jobs_base_multi_configuration_generators:
+        if multi in generator:
+            return True
+    return False
+
+
 def is_multi_configuration_generator(path, cmake_args=None):
     """
     Check if the used CMake generator is a multi configuration generator.
