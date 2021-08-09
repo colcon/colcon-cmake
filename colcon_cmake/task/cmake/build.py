@@ -64,10 +64,10 @@ class CmakeBuildTask(TaskExtensionPoint):
             action='store_true',
             help='Force CMake configure step')
 
-    async def build(
+    async def build(  # noqa: D102
         self, *, additional_hooks=None, skip_hook_creation=False,
         environment_callback=None, additional_targets=None
-    ):  # noqa: D102
+    ):
         pkg = self.context.pkg
         args = self.context.args
 
