@@ -26,9 +26,9 @@ class CtestTestResult(TestResultExtensionPoint):
         satisfies_version(
             TestResultExtensionPoint.EXTENSION_POINT_VERSION, '^1.0')
 
-    def get_test_results(
+    def get_test_results(  # noqa: D102
         self, basepath, *, collect_details, files=None
-    ):  # noqa: D102
+    ):
         results = set()
         # check all 'TAG' files in a directory named 'Testing'
         for tag_file in basepath.glob('**/Testing/TAG'):
