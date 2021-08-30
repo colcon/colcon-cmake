@@ -329,7 +329,7 @@ class CmakeBuildTask(TaskExtensionPoint):
             if jobs is None:
                 # the number of cores can't be determined
                 return []
-            # Finalise jobs as as CPU count deducting the limit specified.
+            # Finalize jobs as as CPU count deducting the limit specified.
             jobs = max(jobs + jobs_args, 1)
         return [
             '-j{jobs}'.format_map(locals()),
