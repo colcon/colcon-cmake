@@ -318,9 +318,11 @@ class CmakeBuildTask(TaskExtensionPoint):
                 # do not extend make arguments, let MAKEFLAGS set things
                 return []
         # Use command line specified jobs if positive.
-        jobs_args = args.cmake_jobs if args.cmake_jobs is not None else 0
-        jobs = 0
-        if jobs_args <= 0:
+        jobs_arg = args.cmake_jobs if args.cmake_jobs is not None else 0
+        # If positive, use jobs_arg as is, even if it's more than available.
+        # Excessive jobs specified is a user error.
+        jobs = jobs_arg
+        if jobs_arg <= 0:
             # Base off the number of CPU cores if jobs arg non-positive.
             jobs = os.cpu_count()
             with suppress(AttributeError):
@@ -330,7 +332,9 @@ class CmakeBuildTask(TaskExtensionPoint):
                 # the number of cores can't be determined
                 return []
             # Finalize jobs as as CPU count deducting the limit specified.
-            jobs = max(jobs + jobs_args, 1)
+            jobs = max(jobs + jobs_arg, 1)
+        else:
+            jobs = jobs_arg
         return [
             '-j{jobs}'.format_map(locals()),
             '-l{jobs}'.format_map(locals()),
