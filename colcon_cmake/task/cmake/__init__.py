@@ -109,7 +109,7 @@ def get_buildfile(cmake_cache):
     """
     generator = get_variable_from_cmake_cache(
         str(cmake_cache.parent), 'CMAKE_GENERATOR')
-    if generator == 'Ninja':
+    if 'Ninja' in generator:
         return cmake_cache.parent / 'build.ninja'
     return cmake_cache.parent / 'Makefile'
 
@@ -148,6 +148,7 @@ def is_multi_configuration_generator(path, cmake_args=None):
     :rtype: bool
     """
     known_multi_configuration_generators = (
+        'Ninja Multi-Config',
         'Visual Studio',
         'Xcode',
     )
