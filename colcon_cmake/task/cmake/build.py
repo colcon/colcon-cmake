@@ -14,7 +14,7 @@ from colcon_cmake.task.cmake import get_generator
 from colcon_cmake.task.cmake import get_variable_from_cmake_cache
 from colcon_cmake.task.cmake import get_visual_studio_version
 from colcon_cmake.task.cmake import has_target
-from colcon_cmake.task.cmake import is_jobs_base_generator
+from colcon_cmake.task.cmake import is_jobs_based_generator
 from colcon_cmake.task.cmake import is_multi_configuration_generator
 from colcon_core.environment import create_environment_scripts
 from colcon_core.logging import colcon_logger
@@ -228,7 +228,7 @@ class CmakeBuildTask(TaskExtensionPoint):
             if additional_targets:
                 targets += additional_targets
 
-        jobs_base_generator = is_jobs_base_generator(
+        jobs_base_generator = is_jobs_based_generator(
             args.build_base, args.cmake_args)
         multi_configuration_generator = is_multi_configuration_generator(
             args.build_base, args.cmake_args)
@@ -346,7 +346,7 @@ class CmakeBuildTask(TaskExtensionPoint):
             raise RuntimeError("Could not find 'cmake' executable")
         cmd = [CMAKE_EXECUTABLE]
         cmake_ver = get_cmake_version()
-        allow_job_args = is_jobs_base_generator(
+        allow_job_args = is_jobs_based_generator(
             args.build_base, args.cmake_args)
         if cmake_ver and cmake_ver >= parse_version('3.15.0'):
             # CMake 3.15+ supports invoking `cmake --install`

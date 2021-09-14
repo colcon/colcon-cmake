@@ -139,7 +139,7 @@ def get_generator(path, cmake_args=None):
     return generator
 
 
-def is_jobs_base_generator(path, cmake_args=None):
+def is_jobs_based_generator(path, cmake_args=None):
     """
     Check if the used CMake generator supports jobs base arguments (-jN).
 
