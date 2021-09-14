@@ -250,7 +250,7 @@ class CmakeBuildTask(TaskExtensionPoint):
             if multi_configuration_generator:
                 cmd += ['--config', self._get_configuration(args)]
             if jobs_base_generator:
-                job_args = self._get_make_jobs_arguments(args, env)
+                job_args = self._get_jobs_arguments(args, env)
                 if job_args:
                     cmd += ['--'] + job_args
             completed = await run(
@@ -290,11 +290,14 @@ class CmakeBuildTask(TaskExtensionPoint):
             env['CL'] = ' '.join(cl_split)
         return env
 
-    def _get_make_jobs_arguments(self, args, env):
+    def _get_jobs_arguments(self, args, env):
         """
         Get the make arguments to limit the number of simultaneously run jobs.
 
         The arguments are chosen based on the `cpu_count`, e.g. -j4 -l4.
+
+        This only handles some generators, specifically; Makefiles and Ninja
+        derivatives.
 
         :param dict env: a dictionary with environment variables
         :returns: list of make arguments
@@ -366,7 +369,7 @@ class CmakeBuildTask(TaskExtensionPoint):
         if multi_configuration_generator:
             cmd += ['--config', self._get_configuration(args)]
         if allow_job_args:
-            job_args = self._get_make_jobs_arguments(args, env)
+            job_args = self._get_jobs_arguments(args, env)
             if job_args:
                 cmd += ['--'] + job_args
         return await run(
