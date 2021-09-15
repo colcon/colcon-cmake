@@ -296,7 +296,8 @@ class CmakeBuildTask(TaskExtensionPoint):
 
         The arguments are chosen based on the `cpu_count`, e.g. -j4 -l4.
 
-        This only handles jobs based generators, see `is_jobs_based_generator()`.
+        This only handles jobs based generators, see
+        `is_jobs_based_generator()`.
 
         :param dict env: a dictionary with environment variables
         :returns: list of make arguments
