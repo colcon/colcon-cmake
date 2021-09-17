@@ -14,7 +14,6 @@ from colcon_cmake.task.cmake import get_generator
 from colcon_cmake.task.cmake import get_variable_from_cmake_cache
 from colcon_cmake.task.cmake import get_visual_studio_version
 from colcon_cmake.task.cmake import has_target
-from colcon_cmake.task.cmake import is_jobs_based_generator
 from colcon_cmake.task.cmake import is_multi_configuration_generator
 from colcon_core.environment import create_environment_scripts
 from colcon_core.logging import colcon_logger
@@ -228,8 +227,6 @@ class CmakeBuildTask(TaskExtensionPoint):
             if additional_targets:
                 targets += additional_targets
 
-        jobs_base_generator = is_jobs_based_generator(
-            args.build_base, args.cmake_args)
         multi_configuration_generator = is_multi_configuration_generator(
             args.build_base, args.cmake_args)
         if multi_configuration_generator:
@@ -249,10 +246,9 @@ class CmakeBuildTask(TaskExtensionPoint):
                 cmd += ['--clean-first']
             if multi_configuration_generator:
                 cmd += ['--config', self._get_configuration(args)]
-            if jobs_base_generator:
-                job_args = self._get_jobs_arguments(args, env)
-                if job_args:
-                    cmd += ['--'] + job_args
+            job_args = self._get_jobs_arguments(args, env)
+            if job_args:
+                cmd += job_args
             completed = await run(
                 self.context, cmd, cwd=args.build_base, env=env)
             if completed.returncode:
@@ -294,16 +290,47 @@ class CmakeBuildTask(TaskExtensionPoint):
         """
         Get the make arguments to limit the number of simultaneously run jobs.
 
-        The arguments are chosen based on the `cpu_count`, e.g. -j4 -l4.
+        For CMake 3.12+ this passes -jN to cmake --build.
 
-        This only handles jobs based generators, see
-        `is_jobs_based_generator()`.
+        Pre 3.12, we support Ninja and Makefiles passing `-- -jN -lN` unless
+        MAKEFLAGS already contains -j and the generator is Makefiles based.
 
         :param dict env: a dictionary with environment variables
         :returns: list of make arguments
         :rtype: list of strings
         """
+        # Calculate how many jobs to use.
+        jobs = 0
+        if args.cmake_jobs is not None:
+            jobs = args.cmake_jobs
+        # If positive, use jobs as is, even if it's more than available.
+        # Excessive jobs specified is a user error.
+        if jobs <= 0:
+            # Base off the number of CPU cores if jobs arg non-positive.
+            cores = os.cpu_count()
+            with suppress(AttributeError):
+                # consider restricted set of CPUs if applicable
+                cores = min(cores, len(os.sched_getaffinity(0)))
+            if cores is None:
+                # the number of cores can't be determined
+                return []
+            # Finalize jobs as as CPU count deducting the limit specified.
+            jobs = cores
+
+        cmake_ver = get_cmake_version()
+        if cmake_ver and cmake_ver >= parse_version('3.12.0'):
+            # CMake 3.12 support --parallel/-j command line argument or using
+            # the CMAKE_BUILD_PARALLEL_LEVEL environment variable.
+            return ['-j{jobs}'.format_map(locals())]
+
+        # Legacy determination of using '-j'.
+        # Should be removed once CMake < 3.12 is no longer supported
         generator = get_generator(args.build_base)
+        # Only 'Ninja' and 'Makefiles' are known to be -j compatible before
+        # CMake 3.12
+        if 'Ninja' not in generator and 'Makefiles' not in generator:
+            return []
+        # Check MAKEFLAGS for jobs specification.
         if 'Makefiles' in generator and args.cmake_jobs is None:
             # check MAKEFLAGS for -j/--jobs/-l/--load-average arguments
             # Note: Ninja does not support environment variables.
@@ -320,24 +347,8 @@ class CmakeBuildTask(TaskExtensionPoint):
             if matches:
                 # do not extend make arguments, let MAKEFLAGS set things
                 return []
-        # Use command line specified jobs if positive.
-        jobs = 0
-        if args.cmake_jobs is not None:
-            jobs = args.cmake_jobs
-        # If positive, use jobs as is, even if it's more than available.
-        # Excessive jobs specified is a user error.
-        if jobs <= 0:
-            # Base off the number of CPU cores if jobs arg non-positive.
-            cores = os.cpu_count()
-            with suppress(AttributeError):
-                # consider restricted set of CPUs if applicable
-                cores = min(cores, len(os.sched_getaffinity(0)))
-            if cores is None:
-                # the number of cores can't be determined
-                return []
-            # Finalize jobs as as CPU count deducting the limit specified.
-            jobs = max(cores + jobs, 1)
         return [
+            '--',
             '-j{jobs}'.format_map(locals()),
             '-l{jobs}'.format_map(locals()),
         ]
@@ -349,8 +360,7 @@ class CmakeBuildTask(TaskExtensionPoint):
             raise RuntimeError("Could not find 'cmake' executable")
         cmd = [CMAKE_EXECUTABLE]
         cmake_ver = get_cmake_version()
-        allow_job_args = is_jobs_based_generator(
-            args.build_base, args.cmake_args)
+        allow_job_args = True
         if cmake_ver and cmake_ver >= parse_version('3.15.0'):
             # CMake 3.15+ supports invoking `cmake --install`
             cmd += ['--install', args.build_base]
@@ -371,6 +381,6 @@ class CmakeBuildTask(TaskExtensionPoint):
         if allow_job_args:
             job_args = self._get_jobs_arguments(args, env)
             if job_args:
-                cmd += ['--'] + job_args
+                cmd += job_args
         return await run(
             self.context, cmd, cwd=args.build_base, env=env)
