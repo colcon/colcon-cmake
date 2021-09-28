@@ -63,6 +63,16 @@ class CmakeBuildTask(TaskExtensionPoint):
             '--cmake-force-configure',
             action='store_true',
             help='Force CMake configure step')
+        parser.add_argument(
+            '--cmake-build-args',
+            nargs='*', metavar='*', type=str.lstrip,
+            help="Pass arguments to 'cmake --build'. "
+            'Arguments matching other options must be prefixed by a space')
+        parser.add_argument(
+            '--cmake-install-args',
+            nargs='*', metavar='*', type=str.lstrip,
+            help="Pass arguments to 'cmake --install'. "
+            'Arguments matching other options must be prefixed by a space')
 
     async def build(  # noqa: D102
         self, *, additional_hooks=None, skip_hook_creation=False,
@@ -206,6 +216,40 @@ class CmakeBuildTask(TaskExtensionPoint):
     def _get_last_cmake_args_path(self, build_base):
         return Path(build_base) / 'cmake_args.last'
 
+    def _have_jobs_arg(self, cmd, env):
+        """
+        Check the given command line argument list looking for jobs args.
+
+        There are a number of ways to specify the number of jobs to use. This
+        function checks if any known mechanisms are present. This checks for
+        the following patterns: [-j#, -j #, --parallel, '-- -j']. The last item
+        is for pre CMake 3.12, while the prior options are for 3.12+ where
+        CMake knows how to pass jobs to the make system.
+
+        :param list cmd: Command line argument list for the build command.
+        :returns: True when a jobs argument is found in cmd.
+        """
+        have_dashes = False
+        cmake_has_jobs = False
+        cmake_ver = get_cmake_version()
+        if cmake_ver and cmake_ver >= parse_version('3.12.0'):
+            cmake_has_jobs = True
+            # Respect CMAKE_BUILD_PARALLEL_LEVEL environment variable.
+            cmake_parallel_level = env.get('CMAKE_BUILD_PARALLEL_LEVEL', '')
+            if cmake_parallel_level:
+                return True
+        for arg in cmd:
+            if arg == '--':
+                # Now passing though args to the make system
+                have_dashes = True
+            if re.match('-j[0-9]*', arg) and (cmake_has_jobs or have_dashes):
+                # CMake 3.12+ and direct -j option, or pre 3.12 and after '--'
+                return True
+            if arg.startswith('--parallel') and cmake_has_jobs:
+                # CMake 3.12 and '--parallel' present.
+                return True
+        return False
+
     async def _build(self, args, env, *, additional_targets=None):
         self.progress('build')
 
@@ -240,10 +284,18 @@ class CmakeBuildTask(TaskExtensionPoint):
                 cmd += ['--clean-first']
             if multi_configuration_generator:
                 cmd += ['--config', self._get_configuration(args)]
-            else:
+            # Add any additional build arguments.
+            if args.cmake_build_args:
+                cmd += args.cmake_build_args
+            if (not multi_configuration_generator and
+                    not self._have_jobs_arg(cmd, env)):
+                # Add jobs from MAKEFLAGS or max out.
                 job_args = self._get_make_arguments(env)
                 if job_args:
-                    cmd += ['--'] + job_args
+                    # add '--' pass through if not already present
+                    if '--' not in cmd:
+                        cmd += ['--']
+                    cmd += job_args
             completed = await run(
                 self.context, cmd, cwd=args.build_base, env=env)
             if completed.returncode:
@@ -343,9 +395,17 @@ class CmakeBuildTask(TaskExtensionPoint):
             args.build_base, args.cmake_args)
         if multi_configuration_generator:
             cmd += ['--config', self._get_configuration(args)]
-        elif allow_job_args:
+            allow_job_args = False
+        if args.cmake_install_args:
+            cmd += args.cmake_install_args
+            if self._have_jobs_arg(cmd, env):
+                allow_job_args = False
+        if allow_job_args:
             job_args = self._get_make_arguments(env)
             if job_args:
-                cmd += ['--'] + job_args
+                # add '--' pass through if not already present
+                if '--' not in cmd:
+                    cmd += ['--']
+                cmd += job_args
         return await run(
             self.context, cmd, cwd=args.build_base, env=env)
