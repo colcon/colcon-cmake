@@ -240,7 +240,7 @@ class CmakeBuildTask(TaskExtensionPoint):
                 return True
         for arg in cmd:
             if arg == '--':
-                # Now passing though args to the make system
+                # Now passing through args to the make system
                 have_dashes = True
             if re.match('-j[0-9]*', arg) and (cmake_has_jobs or have_dashes):
                 # CMake 3.12+ and direct -j option, or pre 3.12 and after '--'
