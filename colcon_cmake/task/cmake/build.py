@@ -60,6 +60,10 @@ class CmakeBuildTask(TaskExtensionPoint):
             help="Build target 'clean' first, then build (to only clean use "
                  "'--cmake-target clean')")
         parser.add_argument(
+            '--cmake-configure-only',
+            action='store_true',
+            help='Stop after configuring cmake without building any targets')
+        parser.add_argument(
             '--cmake-force-configure',
             action='store_true',
             help='Force CMake configure step')
@@ -72,7 +76,7 @@ class CmakeBuildTask(TaskExtensionPoint):
         args = self.context.args
 
         logger.info(
-            "Building CMake package in '{args.path}'".format_map(locals()))
+            "Configuring CMake package in '{args.path}'".format_map(locals()))
 
         try:
             env = await get_command_environment(
@@ -99,7 +103,15 @@ class CmakeBuildTask(TaskExtensionPoint):
                 .format_map(locals())
             )
             return
-
+        
+        if args.cmake_configure_only:
+            logger.info(
+                "Successfully configured CMake package: '{project_name}'".format_map(locals()))
+            return
+        
+        logger.info(
+            "Building CMake package: '{project_name}'".format_map(locals()))
+        
         rc = await self._build(
             args, env, additional_targets=additional_targets)
         if rc:
