@@ -103,15 +103,17 @@ class CmakeBuildTask(TaskExtensionPoint):
                 .format_map(locals())
             )
             return
-        
+
         if args.cmake_configure_only:
             logger.info(
-                "Successfully configured CMake package: '{project_name}'".format_map(locals()))
+                "Successfully configured CMake package: '{project_name}'"
+                .format_map(locals())
+            )
             return
-        
+
         logger.info(
             "Building CMake package: '{project_name}'".format_map(locals()))
-        
+
         rc = await self._build(
             args, env, additional_targets=additional_targets)
         if rc:
