@@ -109,7 +109,7 @@ def get_buildfile(cmake_cache):
     """
     generator = get_variable_from_cmake_cache(
         str(cmake_cache.parent), 'CMAKE_GENERATOR')
-    if 'Ninja' in generator:
+    if generator and 'Ninja' in generator:
         return cmake_cache.parent / 'build.ninja'
     return cmake_cache.parent / 'Makefile'
 
