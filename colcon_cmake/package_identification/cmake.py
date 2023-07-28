@@ -6,6 +6,7 @@ from pathlib import Path
 import re
 import sys
 
+from colcon_core.dependency_descriptor import DependencyDescriptor
 from colcon_core.logging import colcon_logger
 from colcon_core.package_identification \
     import PackageIdentificationExtensionPoint
@@ -187,9 +188,15 @@ def extract_dependencies(content):
     :returns: The dependencies name
     :rtype: list
     """
-    return \
-        extract_find_package_calls(content) | \
+    metadata = {
+        'origin': 'cmake',
+    }
+
+    return {
+        DependencyDescriptor(d, metadata=metadata)
+        for d in extract_find_package_calls(content) |
         _extract_pkg_config_calls(content)
+    }
 
 
 def extract_find_package_calls(content, *, function_name='find_package'):
