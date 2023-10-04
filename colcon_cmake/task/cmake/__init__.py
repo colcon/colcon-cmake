@@ -9,7 +9,7 @@ import sys
 
 from colcon_core.environment_variable import EnvironmentVariable
 from colcon_core.subprocess import check_output
-from pkg_resources import parse_version
+from packaging.version import Version
 
 """Environment variable to override the CMake executable"""
 CMAKE_COMMAND_ENVIRONMENT_VARIABLE = EnvironmentVariable(
@@ -219,7 +219,7 @@ def get_visual_studio_version():
 """
 Global variable for the cached CMake version number.
 
-When valid, this will be a pkg_resources.extern.packaging.version.Version.
+When valid, this will be a packaging.version.Version.
 It may also be None when the CMake version could not be determined to avoid
 trying to determine it again.
 """
@@ -235,7 +235,7 @@ def get_cmake_version():
 
     :returns: The version as reported by `CMAKE_EXECUTABLE --version`, or None
       when the version number could not be determined
-    :rtype pkg_resources.extern.packaging.version.Version
+    :rtype packaging.version.Version
     """
     global _cached_cmake_version
     if _cached_cmake_version is False:
@@ -247,8 +247,8 @@ def _parse_cmake_version():
     """
     Parse the CMake version printed by `CMAKE_EXECUTABLE --version`.
 
-    :returns: The version parsed by pkg_resources.parse_version, or None
-    :rtype pkg_resources.extern.packaging.version.Version
+    :returns: The version parsed by packaging.version.Version, or None
+    :rtype packaging.version.Version
     """
     try:
         output = subprocess.check_output(
@@ -272,11 +272,11 @@ def _parse_cmake_version_string(version_string):
 
     :param str version_string: The version string to parse.
     :returns: The parsed version string or None on failure to parse.
-    :rtype pkg_resources.extern.packaging.version.Version
+    :rtype packaging.version.Version
     """
     # Extract just the version part of the string.
     ver_re_str = r'^(?:.*\s)?(\d+\.\d+\.\d+).*'
     ver_match = re.match(ver_re_str, version_string)
     if ver_match:
-        return parse_version(ver_match.group(1))
+        return Version(ver_match.group(1))
     return None
