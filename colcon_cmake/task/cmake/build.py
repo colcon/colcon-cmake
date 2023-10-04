@@ -21,7 +21,7 @@ from colcon_core.plugin_system import satisfies_version
 from colcon_core.shell import get_command_environment
 from colcon_core.task import run
 from colcon_core.task import TaskExtensionPoint
-from pkg_resources import parse_version
+from packaging.version import Version
 
 logger = colcon_logger.getChild(__name__)
 
@@ -327,7 +327,7 @@ class CmakeBuildTask(TaskExtensionPoint):
         cmd = [CMAKE_EXECUTABLE]
         cmake_ver = get_cmake_version()
         allow_job_args = True
-        if cmake_ver and cmake_ver >= parse_version('3.15.0'):
+        if cmake_ver and cmake_ver >= Version('3.15.0'):
             # CMake 3.15+ supports invoking `cmake --install`
             cmd += ['--install', args.build_base]
             # Job args not compatible with --install directive
