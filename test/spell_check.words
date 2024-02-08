@@ -19,6 +19,7 @@ iterdir
 kazys
 kislyuk
 libx
+linter
 lstrip
 makefile
 makefiles
@@ -33,6 +34,7 @@ pathlib
 pkgs
 plugin
 prepend
+pydocstyle
 pytest
 returncode
 rindex
