@@ -1,11 +1,13 @@
 # Copyright 2016-2018 Dirk Thomas
 # Licensed under the Apache License, Version 2.0
 
+from argparse import SUPPRESS
 import ast
 from contextlib import suppress
 import os
 from pathlib import Path
 import re
+import warnings
 
 from colcon_cmake.task.cmake import CMAKE_EXECUTABLE
 from colcon_cmake.task.cmake import get_buildfile
@@ -43,12 +45,20 @@ class CmakeBuildTask(TaskExtensionPoint):
             'default, e.g. add `--event-handlers console_cohesion+`)')
         parser.add_argument(
             '--cmake-target',
-            help='Build a specific target instead of the default target')
+            help=SUPPRESS)
+        parser.add_argument(
+            '--cmake-targets',
+            help='Build specific targets instead of the default target',
+            nargs='*')
         parser.add_argument(
             '--cmake-target-skip-unavailable',
             action='store_true',
-            help="Skip building packages which don't have the target passed "
-                 'to --cmake-target')
+            help=SUPPRESS)
+        parser.add_argument(
+            '--cmake-targets-skip-unavailable',
+            action='store_true',
+            help='Skip building any targets passed to --cmake-targets for '
+                 "which packages don't have that target")
         parser.add_argument(
             '--cmake-clean-cache',
             action='store_true',
@@ -70,6 +80,19 @@ class CmakeBuildTask(TaskExtensionPoint):
     ):
         pkg = self.context.pkg
         args = self.context.args
+
+        if args.cmake_target is not None:
+            warnings.warn(
+                '--cmake-target is deprecated, please use --cmake-targets')
+            if args.cmake_targets is None:
+                args.cmake_targets = []
+            args.cmake_targets.append(args.cmake_target)
+        if args.cmake_target_skip_unavailable:
+            warnings.warn(
+                '--cmake-target-skip-unavailable is deprecated, please use '
+                '--cmake-targets-skip-unavailable')
+            args.cmake_targets_skip_unavailable = \
+                args.cmake_target_skip_unavailable
 
         logger.info(
             "Building CMake package in '{args.path}'".format_map(locals()))
@@ -106,7 +129,7 @@ class CmakeBuildTask(TaskExtensionPoint):
             return rc
 
         # skip install step if a specific target was requested
-        if not args.cmake_target:
+        if args.cmake_targets is None:
             if await has_target(args.build_base, 'install'):
                 completed = await self._install(args, env)
                 if completed.returncode:
@@ -215,9 +238,9 @@ class CmakeBuildTask(TaskExtensionPoint):
             raise RuntimeError("Could not find 'cmake' executable")
 
         targets = []
-        if args.cmake_target:
-            targets.append(args.cmake_target)
-        else:
+        if args.cmake_targets:
+            targets += args.cmake_targets
+        elif args.cmake_targets is None:
             targets.append('')
             if additional_targets:
                 targets += additional_targets
@@ -232,7 +255,7 @@ class CmakeBuildTask(TaskExtensionPoint):
         for i, target in enumerate(targets):
             cmd = [CMAKE_EXECUTABLE, '--build', args.build_base]
             if target:
-                if args.cmake_target_skip_unavailable:
+                if args.cmake_targets_skip_unavailable:
                     if not await has_target(args.build_base, target):
                         continue
                 self.progress("build target '{target}'".format_map(locals()))
