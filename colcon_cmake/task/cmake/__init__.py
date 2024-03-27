@@ -1,6 +1,7 @@
 # Copyright 2016-2018 Dirk Thomas
 # Licensed under the Apache License, Version 2.0
 
+import asyncio
 import os
 import re
 import shutil
@@ -54,7 +55,7 @@ async def has_target(path, target):
     """
     generator = get_generator(path)
     if 'Unix Makefiles' in generator:
-        return target in await get_makefile_targets(path)
+        return await get_makefile_has_targets(path, target)
     if 'Ninja' in generator:
         return target in get_ninja_targets(path)
     if 'Visual Studio' in generator:
@@ -64,6 +65,24 @@ async def has_target(path, target):
     assert False, \
         "'has_target' not implemented for CMake generator '{generator}'" \
         .format_map(locals())
+
+
+async def get_makefile_has_targets(path, target):
+    """
+    Check if a `Makefile` has a specific target.
+
+    :param str path: The path of the directory contain the Makefile
+    :param str target: The name of the target
+    :rtype: bool
+    """
+    proc = await asyncio.create_subprocess_exec(CMAKE_EXECUTABLE, '--build',
+                                                path, '--', '-q', target,
+                                                stdout=asyncio.subprocess.DEVNULL,
+                                                stderr=asyncio.subprocess.PIPE)
+
+    stdout, stderr = await proc.communicate()
+
+    return stderr is None or ("No rule to make target" not in stderr.decode())
 
 
 async def get_makefile_targets(path):
