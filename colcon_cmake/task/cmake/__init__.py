@@ -54,7 +54,7 @@ async def has_target(path, target):
     """
     generator = get_generator(path)
     if 'Unix Makefiles' in generator:
-        return target in await get_makefile_targets(path)
+        return await get_makefile_has_targets(path, target)
     if 'Ninja' in generator:
         return target in get_ninja_targets(path)
     if 'Visual Studio' in generator:
@@ -65,6 +65,11 @@ async def has_target(path, target):
         "'has_target' not implemented for CMake generator '{generator}'" \
         .format_map(locals())
 
+async def get_makefile_has_targets(path, target):
+    output = subprocess.run([
+        CMAKE_EXECUTABLE, '--build', path, '--', '-n', target], stderr=subprocess.STDOUT, cwd=path).stdout
+
+    return output is None or not "No rule to make target" in output
 
 async def get_makefile_targets(path):
     """
