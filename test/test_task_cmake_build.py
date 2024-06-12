@@ -26,21 +26,6 @@ def monkey_patch_put_event_into_queue(monkeypatch):
     )
 
 
-@pytest.fixture(autouse=True)
-def monkey_patch_vs_version(monkeypatch):
-    """
-    Ensure that VisualStudioVersion is set for the test.
-
-    As it stands, colcon-cmake uses the VisualStudioVersion environment
-    variable to determine if it needs to override the platform so that 64-bit
-    binaries are built on 64-bit platforms. This is normally set within
-    a developer command prompt. We don't really care in this context, so just
-    set it to something to appease the check.
-    """
-    if os.name == 'nt' and 'VisualStudioVersion' not in os.environ:
-        monkeypatch.setenv('VisualStudioVersion', '16.0')
-
-
 def _test_build_package(
     tmp_path, *, cmake_args=None, cmake_clean_cache=False,
     cmake_clean_first=False, cmake_force_configure=None,
@@ -106,6 +91,9 @@ def _test_build_package(
 @pytest.mark.skipif(
     not shutil.which('cmake'),
     reason='CMake must be installed to run this test')
+@pytest.mark.skipif(
+    os.name == 'nt' and 'VisualStudioVersion' not in os.environ,
+    reason='Must be run from a developer command prompt')
 def test_build_package(tmpdir, cmake_target):
     tmp_path = Path(tmpdir)
     _test_build_package(tmp_path, cmake_target=cmake_target)
