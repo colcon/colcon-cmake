@@ -1,5 +1,7 @@
 apache
 argcomplete
+asyncio
+autouse
 basepath
 buildfile
 cmake
@@ -25,6 +27,7 @@ makefile
 makefiles
 makeflags
 modline
+monkeypatch
 msbuild
 mtime
 nargs
@@ -37,14 +40,17 @@ prepend
 pydocstyle
 pytest
 returncode
+rglob
 rindex
 rmtree
 rtype
 samefile
 scspell
 setuptools
+skipif
 stepanas
 tagname
 thomas
+tmpdir
 vcxproj
 xcode
