@@ -46,6 +46,7 @@ rmtree
 rtype
 samefile
 scspell
+setenv
 setuptools
 skipif
 stepanas
