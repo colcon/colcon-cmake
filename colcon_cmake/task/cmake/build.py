@@ -63,6 +63,12 @@ class CmakeBuildTask(TaskExtensionPoint):
             '--cmake-force-configure',
             action='store_true',
             help='Force CMake configure step')
+        parser.add_argument(
+            '--cmake-jobs',
+            type=int,
+            help='Number of jobs to use for supported generators (e.g., Ninja '
+            'Makefiles). Negative values subtract from the maximum '
+            'available, so --jobs=-1 uses all bar 1 available threads.')
 
     async def build(  # noqa: D102
         self, *, additional_hooks=None, skip_hook_creation=False,
@@ -241,10 +247,9 @@ class CmakeBuildTask(TaskExtensionPoint):
                 cmd += ['--clean-first']
             if multi_configuration_generator:
                 cmd += ['--config', self._get_configuration(args)]
-            else:
-                job_args = self._get_make_arguments(env)
-                if job_args:
-                    cmd += ['--'] + job_args
+            job_args = self._get_jobs_arguments(args, env)
+            if job_args:
+                cmd += job_args
             completed = await run(
                 self.context, cmd, cwd=args.build_base, env=env)
             if completed.returncode:
@@ -282,39 +287,69 @@ class CmakeBuildTask(TaskExtensionPoint):
             env['CL'] = ' '.join(cl_split)
         return env
 
-    def _get_make_arguments(self, env):
+    def _get_jobs_arguments(self, args, env):
         """
         Get the make arguments to limit the number of simultaneously run jobs.
 
-        The arguments are chosen based on the `cpu_count`, e.g. -j4 -l4.
+        For CMake 3.12+ this passes -jN to cmake --build.
+
+        Pre 3.12, we support Ninja and Makefiles passing `-- -jN -lN` unless
+        MAKEFLAGS already contains -j and the generator is Makefiles based.
 
         :param dict env: a dictionary with environment variables
         :returns: list of make arguments
         :rtype: list of strings
         """
-        # check MAKEFLAGS for -j/--jobs/-l/--load-average arguments
-        makeflags = env.get('MAKEFLAGS', '')
-        regex = (
-            r'(?:^|\s)'
-            r'(-?(?:j|l)(?:\s*[0-9]+|\s|$))'
-            r'|'
-            r'(?:^|\s)'
-            r'((?:--)?(?:jobs|load-average)(?:(?:=|\s+)[0-9]+|(?:\s|$)))'
-        )
-        matches = re.findall(regex, makeflags) or []
-        matches = [m[0] or m[1] for m in matches]
-        if matches:
-            # do not extend make arguments, let MAKEFLAGS set things
+        # Calculate how many jobs to use.
+        jobs = 0
+        if args.cmake_jobs is not None:
+            jobs = args.cmake_jobs
+        # If positive, use jobs as is, even if it's more than available.
+        # Excessive jobs specified is a user error.
+        if jobs <= 0:
+            # Base off the number of CPU cores if jobs arg non-positive.
+            cores = os.cpu_count()
+            with suppress(AttributeError):
+                # consider restricted set of CPUs if applicable
+                cores = min(cores, len(os.sched_getaffinity(0)))
+            if cores is None:
+                # the number of cores can't be determined
+                return []
+            # Finalize jobs as as CPU count deducting the limit specified.
+            jobs = cores
+
+        cmake_ver = get_cmake_version()
+        if cmake_ver and cmake_ver >= parse_version('3.12.0'):
+            # CMake 3.12 support --parallel/-j command line argument or using
+            # the CMAKE_BUILD_PARALLEL_LEVEL environment variable.
+            return ['-j{jobs}'.format_map(locals())]
+
+        # Legacy determination of using '-j'.
+        # Should be removed once CMake < 3.12 is no longer supported
+        generator = get_generator(args.build_base)
+        # Only 'Ninja' and 'Makefiles' are known to be -j compatible before
+        # CMake 3.12
+        if 'Ninja' not in generator and 'Makefiles' not in generator:
             return []
-        # Use the number of CPU cores
-        jobs = os.cpu_count()
-        with suppress(AttributeError):
-            # consider restricted set of CPUs if applicable
-            jobs = min(jobs, len(os.sched_getaffinity(0)))
-        if jobs is None:
-            # the number of cores can't be determined
-            return []
+        # Check MAKEFLAGS for jobs specification.
+        if 'Makefiles' in generator and args.cmake_jobs is None:
+            # check MAKEFLAGS for -j/--jobs/-l/--load-average arguments
+            # Note: Ninja does not support environment variables.
+            makeflags = env.get('MAKEFLAGS', '')
+            regex = (
+                r'(?:^|\s)'
+                r'(-?(?:j|l)(?:\s*[0-9]+|\s|$))'
+                r'|'
+                r'(?:^|\s)'
+                r'((?:--)?(?:jobs|load-average)(?:(?:=|\s+)[0-9]+|(?:\s|$)))'
+            )
+            matches = re.findall(regex, makeflags) or []
+            matches = [m[0] or m[1] for m in matches]
+            if matches:
+                # do not extend make arguments, let MAKEFLAGS set things
+                return []
         return [
+            '--',
             '-j{jobs}'.format_map(locals()),
             '-l{jobs}'.format_map(locals()),
         ]
@@ -344,9 +379,9 @@ class CmakeBuildTask(TaskExtensionPoint):
             args.build_base, args.cmake_args)
         if multi_configuration_generator:
             cmd += ['--config', self._get_configuration(args)]
-        elif allow_job_args:
-            job_args = self._get_make_arguments(env)
+        if allow_job_args:
+            job_args = self._get_jobs_arguments(args, env)
             if job_args:
-                cmd += ['--'] + job_args
+                cmd += job_args
         return await run(
             self.context, cmd, cwd=args.build_base, env=env)
