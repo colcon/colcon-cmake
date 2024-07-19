@@ -63,6 +63,13 @@ class CmakeBuildTask(TaskExtensionPoint):
             '--cmake-force-configure',
             action='store_true',
             help='Force CMake configure step')
+        parser.add_argument(
+            "--cmake-build-args", metavar='*', type=str.lstrip,
+            nargs='*',
+            help='Pass arguments to cmake --build. '
+            'Arguments matching other options must be prefixed by a space,\n'
+            'e.g. --cmake-args " --help" (stdout might not be shown by '
+            'default, e.g. add `--event-handlers console_cohesion+`)')
 
     async def build(  # noqa: D102
         self, *, additional_hooks=None, skip_hook_creation=False,
@@ -241,6 +248,8 @@ class CmakeBuildTask(TaskExtensionPoint):
                 cmd += ['--clean-first']
             if multi_configuration_generator:
                 cmd += ['--config', self._get_configuration(args)]
+            if args.cmake_build_args:
+                cmd += args.cmake_build_args
             else:
                 job_args = self._get_make_arguments(env)
                 if job_args:
