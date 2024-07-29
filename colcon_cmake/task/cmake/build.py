@@ -68,8 +68,7 @@ class CmakeBuildTask(TaskExtensionPoint):
             nargs='*',
             help='Pass arguments to cmake --build. '
             'Arguments matching other options must be prefixed by a space,\n'
-            'e.g. --cmake-args " --help" (stdout might not be shown by '
-            'default, e.g. add `--event-handlers console_cohesion+`)')
+            'e.g. --cmake-build-args " --parallel" 4')
 
     async def build(  # noqa: D102
         self, *, additional_hooks=None, skip_hook_creation=False,
