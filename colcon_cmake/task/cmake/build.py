@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import re
 
+from colcon_cmake.task.cmake import add_api_queries
 from colcon_cmake.task.cmake import CMAKE_EXECUTABLE
 from colcon_cmake.task.cmake import get_buildfile
 from colcon_cmake.task.cmake import get_cmake_version
@@ -172,6 +173,7 @@ class CmakeBuildTask(TaskExtensionPoint):
         if CMAKE_EXECUTABLE is None:
             raise RuntimeError("Could not find 'cmake' executable")
         os.makedirs(args.build_base, exist_ok=True)
+        add_api_queries(args.build_base)
         completed = await run(
             self.context,
             [CMAKE_EXECUTABLE] + cmake_args,

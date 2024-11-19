@@ -1,7 +1,9 @@
 # Copyright 2016-2018 Dirk Thomas
 # Licensed under the Apache License, Version 2.0
 
+import json
 import os
+from pathlib import Path
 import re
 import shutil
 import subprocess
@@ -43,6 +45,73 @@ CTEST_EXECUTABLE = which_executable(
 MSBUILD_EXECUTABLE = shutil.which('msbuild')
 
 
+FILE_API_CLIENT_NAME = 'client-colcon-cmake'
+
+
+def add_api_queries(path):
+    """
+    Create or update CMake file API queries.
+
+    :param str path: The path of the directory contain the generated build
+      system
+    """
+    api_base = Path(path) / '.cmake' / 'api' / 'v1'
+    query_base = api_base / 'query' / FILE_API_CLIENT_NAME
+
+    query_base.mkdir(parents=True, exist_ok=True)
+    (query_base / 'codemodel-v2').touch()
+
+
+def _read_codemodel(path):
+    api_base = Path(path) / '.cmake' / 'api' / 'v1'
+    reply_base = api_base / 'reply'
+
+    for index_path in sorted(reply_base.glob('index-*.json'), reverse=True):
+        break
+    else:
+        return None
+
+    with index_path.open('r') as f:
+        index_data = json.load(f)
+
+    try:
+        codemodel_file = (
+            index_data['reply']
+            [FILE_API_CLIENT_NAME]
+            ['codemodel-v2']
+            ['jsonFile']
+        )
+    except KeyError:
+        return None
+
+    with (reply_base / codemodel_file).open('r') as f:
+        return json.load(f)
+
+
+def _get_codemodel_targets(path):
+    codemodel_data = _read_codemodel(path)
+    if codemodel_data is None:
+        return None
+
+    config_data = codemodel_data.get('configurations', ())
+    if len(config_data) != 1:
+        return None
+
+    targets = []
+
+    for dir_data in config_data[0].get('directories') or ():
+        if dir_data.get('hasInstallRule') is True:
+            targets.append('install')
+            break
+
+    for target_data in config_data[0].get('targets') or ():
+        target_name = target_data.get('name')
+        if target_name is not None:
+            targets.append(target_name)
+
+    return targets
+
+
 async def has_target(path, target):
     """
     Check if the CMake generated build system has a specific target.
@@ -52,6 +121,9 @@ async def has_target(path, target):
     :param str target: The name of the target
     :rtype: bool
     """
+    codemodel_targets = _get_codemodel_targets(path)
+    if codemodel_targets is not None:
+        return target in codemodel_targets
     generator = get_generator(path)
     if 'Unix Makefiles' in generator:
         return target in await get_makefile_targets(path)
