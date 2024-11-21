@@ -84,6 +84,8 @@ class CmakeBuildTask(TaskExtensionPoint):
         if environment_callback is not None:
             environment_callback(env)
 
+        self._set_gnumakeflags(env)
+
         rc = await self._reconfigure(args, env)
         if rc:
             return rc
@@ -241,10 +243,6 @@ class CmakeBuildTask(TaskExtensionPoint):
                 cmd += ['--clean-first']
             if multi_configuration_generator:
                 cmd += ['--config', self._get_configuration(args)]
-            else:
-                job_args = self._get_make_arguments(env)
-                if job_args:
-                    cmd += ['--'] + job_args
             completed = await run(
                 self.context, cmd, cwd=args.build_base, env=env)
             if completed.returncode:
@@ -282,18 +280,14 @@ class CmakeBuildTask(TaskExtensionPoint):
             env['CL'] = ' '.join(cl_split)
         return env
 
-    def _get_make_arguments(self, env):
+    def _set_gnumakeflags(self, env):
         """
-        Get the make arguments to limit the number of simultaneously run jobs.
+        Set GNUMAKEFLAGS to limit the number of simultaneously run jobs.
 
         The arguments are chosen based on the `cpu_count`, e.g. -j4 -l4.
 
         :param dict env: a dictionary with environment variables
-        :returns: list of make arguments
-        :rtype: list of strings
         """
-        # check MAKEFLAGS for -j/--jobs/-l/--load-average arguments
-        makeflags = env.get('MAKEFLAGS', '')
         regex = (
             r'(?:^|\s)'
             r'(-?(?:j|l)(?:\s*[0-9]+|\s|$))'
@@ -301,11 +295,15 @@ class CmakeBuildTask(TaskExtensionPoint):
             r'(?:^|\s)'
             r'((?:--)?(?:jobs|load-average)(?:(?:=|\s+)[0-9]+|(?:\s|$)))'
         )
-        matches = re.findall(regex, makeflags) or []
-        matches = [m[0] or m[1] for m in matches]
-        if matches:
-            # do not extend make arguments, let MAKEFLAGS set things
-            return []
+        # check MAKEFLAGS for -j/--jobs/-l/--load-average arguments
+        makeflags = env.get('MAKEFLAGS', '')
+        if any(m[0] or m[1] for m in re.finditer(regex, makeflags)):
+            return
+        # check GNUMAKEFLAGS for -j/--jobs/-l/--load-average arguments
+        gnumakeflags = env.get('GNUMAKEFLAGS', '')
+        if any(m[0] or m[1] for m in re.finditer(regex, gnumakeflags)):
+            return
+
         # Use the number of CPU cores
         jobs = os.cpu_count()
         with suppress(AttributeError):
@@ -313,11 +311,11 @@ class CmakeBuildTask(TaskExtensionPoint):
             jobs = min(jobs, len(os.sched_getaffinity(0)))
         if jobs is None:
             # the number of cores can't be determined
-            return []
-        return [
-            '-j{jobs}'.format_map(locals()),
-            '-l{jobs}'.format_map(locals()),
-        ]
+            return
+
+        env['GNUMAKEFLAGS'] = f'-j{jobs} -l{jobs}'
+        if gnumakeflags:
+            env['GNUMAKEFLAGS'] += ' ' + gnumakeflags
 
     async def _install(self, args, env):
         self.progress('install')
@@ -326,12 +324,9 @@ class CmakeBuildTask(TaskExtensionPoint):
             raise RuntimeError("Could not find 'cmake' executable")
         cmd = [CMAKE_EXECUTABLE]
         cmake_ver = get_cmake_version()
-        allow_job_args = True
         if cmake_ver and cmake_ver >= Version('3.15.0'):
             # CMake 3.15+ supports invoking `cmake --install`
             cmd += ['--install', args.build_base]
-            # Job args not compatible with --install directive
-            allow_job_args = False
         else:
             # fallback to the install target which implicitly runs a build
             if not cmake_ver:
@@ -344,9 +339,5 @@ class CmakeBuildTask(TaskExtensionPoint):
             args.build_base, args.cmake_args)
         if multi_configuration_generator:
             cmd += ['--config', self._get_configuration(args)]
-        elif allow_job_args:
-            job_args = self._get_make_arguments(env)
-            if job_args:
-                cmd += ['--'] + job_args
         return await run(
             self.context, cmd, cwd=args.build_base, env=env)

@@ -13,9 +13,11 @@ ctest
 ctests
 dcmake
 etree
+finditer
 findtext
 getaffinity
 github
+gnumakeflags
 https
 iterdir
 kazys
