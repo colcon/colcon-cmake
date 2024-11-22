@@ -44,7 +44,7 @@ class CmakeModulePathEnvironment(EnvironmentExtensionPoint):
                         str(path.relative_to(prefix_path)),
                         mode='prepend')
 
-        return hooks.values()
+        return [hook for hook_list in hooks.values() for hook in hook_list]
 
     def _get_potential_cmake_module_paths(self, prefix_path, pkg_name):
         paths = []
