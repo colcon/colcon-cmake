@@ -134,8 +134,7 @@ async def has_target(path, target):
         install_project_file = get_project_file(path, 'INSTALL')
         return install_project_file is not None
     assert False, \
-        "'has_target' not implemented for CMake generator '{generator}'" \
-        .format_map(locals())
+        f"'has_target' not implemented for CMake generator '{generator}'"
 
 
 async def get_makefile_targets(path):
@@ -247,7 +246,7 @@ def get_variable_from_cmake_cache(path, var, *, default=None):
     lines = _get_cmake_cache_lines(path)
     if lines is None:
         return default
-    line_prefix = '{var}:'.format_map(locals())
+    line_prefix = f'{var}:'
     for line in lines:
         if line.startswith(line_prefix):
             try:

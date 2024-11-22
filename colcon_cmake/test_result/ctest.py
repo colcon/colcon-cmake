@@ -43,8 +43,8 @@ class CtestTestResult(TestResultExtensionPoint):
             latest_xml_path = tag_file.parent / latest_xml_dir / 'Test.xml'
             if not latest_xml_path.exists():
                 logger.warning(
-                    "Skipping '{tag_file}': could not find latest XML file "
-                    "'{latest_xml_path}'".format_map(locals()))
+                    f"Skipping '{tag_file}': could not find latest XML file "
+                    f"'{latest_xml_path}'")
                 continue
 
             # parse the XML file
@@ -54,21 +54,21 @@ class CtestTestResult(TestResultExtensionPoint):
             # check if the root tag looks like a CTest file
             if root.tag != 'Site':
                 logger.warning(
-                    "Skipping '{latest_xml_path}': the root tag is not 'Site'"
-                    .format_map(locals()))
+                    f"Skipping '{latest_xml_path}': the root tag is not "
+                    "'Site'")
                 continue
 
             # look for a single 'Testing' child tag
             children = list(root)
             if len(children) != 1:
                 logger.warning(
-                    "Skipping '{latest_xml_path}': 'Site' tag is expected to "
-                    '"have exactly one child'.format_map(locals()))
+                    f"Skipping '{latest_xml_path}': 'Site' tag is expected to "
+                    '"have exactly one child')
                 continue
             if children[0].tag != 'Testing':
                 logger.warning(
-                    "Skipping '{latest_xml_path}': the child tag is not "
-                    "'Testing'".format_map(locals()))
+                    f"Skipping '{latest_xml_path}': the child tag is not "
+                    "'Testing'")
                 continue
 
             if files is not None:
@@ -86,8 +86,8 @@ class CtestTestResult(TestResultExtensionPoint):
                     status = child.attrib['Status']
                 except KeyError:
                     logger.warning(
-                        "Skipping '{latest_xml_path}': a 'test' tag lacks a "
-                        "'Status' attribute".format_map(locals()))
+                        f"Skipping '{latest_xml_path}': a 'test' tag lacks a "
+                        "'Status' attribute")
                     break
 
                 if status == 'failed':

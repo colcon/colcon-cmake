@@ -39,8 +39,7 @@ class CmakeTestTask(TaskExtensionPoint):
         pkg = self.context.pkg
         args = self.context.args
 
-        logger.info(
-            "Testing CMake package in '{args.path}'".format_map(locals()))
+        logger.info(f"Testing CMake package in '{args.path}'")
 
         assert os.path.exists(args.build_base), \
             'Has this package been built before?'
@@ -64,8 +63,7 @@ class CmakeTestTask(TaskExtensionPoint):
             if line.startswith('  '):
                 break
         else:
-            logger.log(
-                5, "No ctests found in '{args.path}'".format_map(locals()))
+            logger.log(5, f"No ctests found in '{args.path}'")
             return
 
         # CTest arguments
@@ -133,8 +131,8 @@ class CmakeTestTask(TaskExtensionPoint):
             latest_xml_path = tag_file.parent / latest_xml_dir / 'Test.xml'
             if not latest_xml_path.exists():
                 logger.warning(
-                    "Skipping '{tag_file}': could not find latest XML file "
-                    "'{latest_xml_path}'".format_map(locals()))
+                    f"Skipping '{tag_file}': could not find latest XML file "
+                    f"'{latest_xml_path}'")
                 return
 
             dst = Path(args.test_result_base) / 'Testing' / latest_xml_dir

@@ -72,8 +72,7 @@ class CmakeBuildTask(TaskExtensionPoint):
         pkg = self.context.pkg
         args = self.context.args
 
-        logger.info(
-            "Building CMake package in '{args.path}'".format_map(locals()))
+        logger.info(f"Building CMake package in '{args.path}'")
 
         try:
             env = await get_command_environment(
@@ -95,10 +94,8 @@ class CmakeBuildTask(TaskExtensionPoint):
         if project_name is None:
             # if not the CMake code hasn't called project() and can't be built
             logger.warning(
-                "Could not build CMake package '{pkg.name}' because the "
-                "CMake cache has no 'CMAKE_PROJECT_NAME' variable"
-                .format_map(locals())
-            )
+                f"Could not build CMake package '{pkg.name}' because the "
+                "CMake cache has no 'CMAKE_PROJECT_NAME' variable")
             return
 
         rc = await self._build(
@@ -114,8 +111,8 @@ class CmakeBuildTask(TaskExtensionPoint):
                     return completed.returncode
             else:
                 logger.warning(
-                    "Could not run installation step for package '{pkg.name}' "
-                    "because it has no 'install' target".format_map(locals()))
+                    'Could not run installation step for package '
+                    f"'{pkg.name}' because it has no 'install' target")
 
         if not skip_hook_creation:
             create_environment_scripts(
@@ -161,9 +158,7 @@ class CmakeBuildTask(TaskExtensionPoint):
                 '14.0': 'Visual Studio 14 2015',
             }
             if vsv not in supported_vsv:
-                raise RuntimeError(
-                    "Unknown / unsupported VS version '{vsv}'"
-                    .format_map(locals()))
+                raise RuntimeError(f"Unknown / unsupported VS version '{vsv}'")
             cmake_args += ['-G', supported_vsv[vsv]]
             # choose 'x64' on VS 14 and 15 if not specified explicitly
             # since otherwise 'Win32' is the default for those
@@ -196,9 +191,7 @@ class CmakeBuildTask(TaskExtensionPoint):
             return ast.literal_eval(content)
         except SyntaxError as e:  # noqa: F841
             logger.error(
-                "Failed to parse previous --cmake-args from '{path}': {e}"
-                .format_map(locals())
-            )
+                f"Failed to parse previous --cmake-args from '{path}': {e}")
             return None
 
     def _store_cmake_args(self, build_base, cmake_args):
@@ -237,7 +230,7 @@ class CmakeBuildTask(TaskExtensionPoint):
                 if args.cmake_target_skip_unavailable:
                     if not await has_target(args.build_base, target):
                         continue
-                self.progress("build target '{target}'".format_map(locals()))
+                self.progress(f"build target '{target}'")
                 cmd += ['--target', target]
             if i == 0 and args.cmake_clean_first:
                 cmd += ['--clean-first']
@@ -317,8 +310,8 @@ class CmakeBuildTask(TaskExtensionPoint):
             # the number of cores can't be determined
             return []
         return [
-            '-j{jobs}'.format_map(locals()),
-            '-l{jobs}'.format_map(locals()),
+            f'-j{jobs}',
+            f'-l{jobs}',
         ]
 
     async def _install(self, args, env):
