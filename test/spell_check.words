@@ -50,6 +50,7 @@ setuptools
 skipif
 stepanas
 tagname
+tempfile
 thomas
 tmpdir
 vcxproj
