@@ -8,6 +8,7 @@ cmake
 cmakelists
 colcon
 completers
+configs
 contextlib
 ctest
 ctests
@@ -53,5 +54,6 @@ tagname
 tempfile
 thomas
 tmpdir
+unittest
 vcxproj
 xcode
