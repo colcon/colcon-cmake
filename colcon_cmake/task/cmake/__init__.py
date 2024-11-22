@@ -109,10 +109,11 @@ def get_buildfile(cmake_cache):
     """
     generator = get_variable_from_cmake_cache(
         str(cmake_cache.parent), 'CMAKE_GENERATOR')
-    if generator and 'Ninja' in generator:
-        return cmake_cache.parent / 'build.ninja'
-    if 'Visual Studio' in generator:
-        return cmake_cache.parent / 'ALL_BUILD.vcxproj'
+    if generator is not None:
+        if 'Ninja' in generator:
+            return cmake_cache.parent / 'build.ninja'
+        if 'Visual Studio' in generator:
+            return cmake_cache.parent / 'ALL_BUILD.vcxproj'
     return cmake_cache.parent / 'Makefile'
 
 
