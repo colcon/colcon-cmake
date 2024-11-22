@@ -6,6 +6,7 @@ basepath
 buildfile
 cmake
 cmakelists
+codemodel
 colcon
 completers
 configs
