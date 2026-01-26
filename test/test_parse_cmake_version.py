@@ -33,7 +33,7 @@ def test_parse_cmake_version():
             # Input string was garbage. Assert parsing failed.
             assert parsed_version is None
         else:
-            assert parsed_version._version.release[0:3] == expected_version
+            assert parsed_version.release[0:3] == expected_version
 
 
 if __name__ == '__main__':
