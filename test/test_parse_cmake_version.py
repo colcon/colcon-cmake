@@ -2,9 +2,14 @@
 # Licensed under the Apache License, Version 2.0
 
 from colcon_cmake.task.cmake import _parse_cmake_version_string
+import pytest
 
 
 def test_parse_cmake_version():
+    # This test requires packaging v17 or newer, but the underlying code
+    # is more flexible.
+    pytest.importorskip('packaging', minversion='17')
+
     # Build version prefix string closely matching what cmake version outputs.
     base_prefix = 'cmake version '
 

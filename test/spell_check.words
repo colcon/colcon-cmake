@@ -19,6 +19,7 @@ findtext
 getaffinity
 github
 https
+importorskip
 iterdir
 kazys
 kislyuk
@@ -28,6 +29,7 @@ lstrip
 makefile
 makefiles
 makeflags
+minversion
 modline
 monkeypatch
 msbuild
