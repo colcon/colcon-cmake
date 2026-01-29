@@ -287,8 +287,7 @@ class CmakeBuildTask(TaskExtensionPoint):
         :returns: list of make arguments
         :rtype: list of strings
         """
-        # check MAKEFLAGS for -j/--jobs/-l/--load-average arguments
-        makeflags = env.get('MAKEFLAGS', '')
+        # check {GNU,}MAKEFLAGS for -j/--jobs/-l/--load-average arguments
         regex = (
             r'(?:^|\s)'
             r'(-?(?:j|l)(?:\s*[0-9]+|\s|$))'
@@ -296,11 +295,13 @@ class CmakeBuildTask(TaskExtensionPoint):
             r'(?:^|\s)'
             r'((?:--)?(?:jobs|load-average)(?:(?:=|\s+)[0-9]+|(?:\s|$)))'
         )
-        matches = re.findall(regex, makeflags) or []
-        matches = [m[0] or m[1] for m in matches]
-        if matches:
-            # do not extend make arguments, let MAKEFLAGS set things
-            return []
+        for var_name in ('MAKEFLAGS', 'GNUMAKEFLAGS'):
+            flags = env.get(var_name) or ''
+            matches = re.findall(regex, flags) or []
+            matches = [m[0] or m[1] for m in matches]
+            if matches:
+                # do not extend make arguments, let the env var set things
+                return []
         # Use the number of CPU cores
         jobs = os.cpu_count()
         with suppress(AttributeError):
