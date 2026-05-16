@@ -3,6 +3,7 @@
 
 from xml.etree.ElementTree import ElementTree
 
+from colcon_core.extension_point import get_all_extension_points
 from colcon_core.logging import colcon_logger
 from colcon_core.plugin_system import satisfies_version
 from colcon_test_result.test_result import Result
@@ -25,6 +26,7 @@ class CtestTestResult(TestResultExtensionPoint):
         super().__init__()
         satisfies_version(
             TestResultExtensionPoint.EXTENSION_POINT_VERSION, '^1.0')
+        self.xunit_extension_installed = "xunit" in get_all_extension_points()["colcon_test_result.test_result"].keys()
 
     def get_test_results(  # noqa: D102
         self, basepath, *, collect_details, files=None
@@ -80,8 +82,6 @@ class CtestTestResult(TestResultExtensionPoint):
                 if child.tag != 'Test':
                     continue
 
-                result.test_count += 1
-
                 try:
                     status = child.attrib['Status']
                 except KeyError:
@@ -89,6 +89,18 @@ class CtestTestResult(TestResultExtensionPoint):
                         f"Skipping '{latest_xml_path}': a 'test' tag lacks a "
                         "'Status' attribute")
                     break
+
+                name = child.findtext('Name')
+
+                # Skip tests which are labeled as gtest if the "xunit" extension is also installed.
+                # Gtest generates an xunit file containing all individual test cases, so don't add +1 for the ctest summary here.
+                if self.xunit_extension_installed:
+                    labels = child.find("Labels") or []
+                    if ("gtest" in [l.text for l in labels]):
+                        logger.debug(f"Skipping '{name}' in '{latest_xml_path}': gtest has own result file.")
+                        continue
+
+                result.test_count += 1
 
                 if status == 'failed':
                     result.failure_count += 1
@@ -98,14 +110,15 @@ class CtestTestResult(TestResultExtensionPoint):
                     result.error_count += 1
 
                 if collect_details and status == 'failed':
-                    lines = [child.findtext('Name')]
+                    lines = [name]
                     lines.extend(
                         _get_messages(
                             'failure message',
                             child.findtext('Results/Measurement/Value')))
                     result.details.append('\n'.join(lines))
             else:
-                results.add(result)
+                if result.test_count > 0:
+                    results.add(result)
         return results
 
 
