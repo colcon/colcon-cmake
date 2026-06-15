@@ -20,11 +20,14 @@ getaffinity
 github
 https
 importorskip
+isdigit
 iterdir
+itertools
 kazys
 kislyuk
 libx
 linter
+linux
 lstrip
 makefile
 makefiles
@@ -54,7 +57,7 @@ setuptools
 skipif
 stepanas
 tagname
-tempfile
+takewhile
 thomas
 tmpdir
 unittest

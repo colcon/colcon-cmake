@@ -94,6 +94,5 @@ def _test_build_package(
 @pytest.mark.skipif(
     os.name == 'nt' and 'VisualStudioVersion' not in os.environ,
     reason='Must be run from a developer command prompt')
-def test_build_package(tmpdir, cmake_target):
-    tmp_path = Path(tmpdir)
+def test_build_package(tmp_path, cmake_target):
     _test_build_package(tmp_path, cmake_target=cmake_target)
