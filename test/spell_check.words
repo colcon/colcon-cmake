@@ -18,6 +18,7 @@ etree
 findtext
 getaffinity
 github
+gnumakeflags
 https
 importorskip
 isdigit
